@@ -7,6 +7,7 @@
 
     @php
         $robot = auth()->user()->robot;
+        $inventories = $robot->inventories()->with('resource')->get();
     @endphp
 
     <div class="py-12">
@@ -48,10 +49,31 @@
                     </div>
                 </div>
 
-                <div class="mt-8 p-4 bg-black text-green-400 rounded-lg font-mono text-sm">
-                    <p>&gt; Центральный ИИ: оператор подключён.</p>
-                    <p>&gt; Робот {{ $robot->name }} активирован.</p>
-                    <p>&gt; Ожидание первой экспедиции...</p>
+                <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="p-4 border border-gray-200 rounded-lg">
+                        <h4 class="text-lg font-bold mb-4">Склад</h4>
+
+                        @if ($inventories->isEmpty())
+                            <p class="text-gray-500">
+                                Склад пуст. Робот ещё не добывал ресурсы.
+                            </p>
+                        @else
+                            <div class="space-y-3">
+                                @foreach ($inventories as $item)
+                                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                                        <span>{{ $item->resource->name }}</span>
+                                        <span class="font-bold">{{ $item->amount }} ед.</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="p-4 bg-black text-green-400 rounded-lg font-mono text-sm">
+                        <p>&gt; Центральный ИИ: оператор подключён.</p>
+                        <p>&gt; Робот {{ $robot->name }} активирован.</p>
+                        <p>&gt; Ожидание первой экспедиции...</p>
+                    </div>
                 </div>
             </div>
 
