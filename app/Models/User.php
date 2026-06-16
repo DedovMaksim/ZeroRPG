@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -17,11 +18,26 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    public function robot(): HasOne
+    {
+        return $this->hasOne(Robot::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            $user->robot()->create([
+                'name' => 'Zero-' . str_pad((string) $user->id, 3, '0', STR_PAD_LEFT),
+                'version' => 1,
+                'cpu' => 1,
+                'ram' => 8,
+                'ssd' => 32,
+                'battery' => 100,
+                'integrity' => 100,
+            ]);
+        });
+    }
+
     protected function casts(): array
     {
         return [
