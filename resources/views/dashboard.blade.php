@@ -15,7 +15,7 @@
         $locations = \App\Models\Location::all();
 
         $activeExpedition = $robot->expeditions()
-            ->with('location')
+            ->with(['location', 'logs'])
             ->where('status', 'in_progress')
             ->latest()
             ->first();
@@ -96,6 +96,34 @@
                                 <span class="font-semibold">Завершение:</span>
                                 {{ $activeExpedition->finished_at->format('H:i') }}
                             </p>
+                        </div>
+
+                        <div class="mt-6 border-t border-yellow-200 pt-4">
+                            <h5 class="font-bold mb-3">
+                                Журнал экспедиции
+                            </h5>
+
+                            @php
+                                $elapsedMinutes = $activeExpedition->started_at->diffInMinutes(now());
+                            @endphp
+
+                            <div class="space-y-1 text-sm font-mono bg-black text-green-400 p-3 rounded-lg">
+                                @foreach ($activeExpedition->logs as $log)
+
+                                    @if ($log->minute <= $elapsedMinutes)
+
+                                        <div>
+                                            <span class="text-green-600">
+                                                [{{ $log->event_time->format('H:i') }}]
+                                            </span>
+
+                                            {{ $log->message }}
+                                        </div>
+
+                                    @endif
+
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 @endif

@@ -6,6 +6,7 @@ use App\Models\Expedition;
 use App\Models\Location;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ExpeditionLogGenerator;
 
 class ExpeditionController extends Controller
 {
@@ -26,7 +27,7 @@ class ExpeditionController extends Controller
 
         $durationMinutes = 5;
 
-        Expedition::create([
+        $expedition = Expedition::create([
             'robot_id' => $robot->id,
             'location_id' => $location->id,
             'status' => 'in_progress',
@@ -34,6 +35,10 @@ class ExpeditionController extends Controller
             'started_at' => now(),
             'finished_at' => now()->addMinutes($durationMinutes),
         ]);
+
+        $generator = new ExpeditionLogGenerator();
+
+        $generator->generate($expedition);
 
         return redirect()
             ->route('dashboard')
