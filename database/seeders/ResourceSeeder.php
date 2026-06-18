@@ -18,12 +18,12 @@ class ResourceSeeder extends Seeder
             [
                 'name' => 'Медь',
                 'slug' => 'copper',
-                'storage_size' => 1,
+                'storage_size' => 3,
             ],
             [
                 'name' => 'Электроника',
                 'slug' => 'electronics',
-                'storage_size' => 2,
+                'storage_size' => 8,
             ],
         ];
 

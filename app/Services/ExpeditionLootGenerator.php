@@ -17,11 +17,9 @@ class ExpeditionLootGenerator
 
         foreach ($lootTable as $lootItem) {
             if (rand(1, 100) <= $lootItem['chance']) {
-                $amount = rand($lootItem['min'], $lootItem['max']);
-
                 $generatedLoot[] = [
                     'resource' => $lootItem['resource'],
-                    'amount' => $amount,
+                    'amount' => rand($lootItem['min'], $lootItem['max']),
                 ];
             }
         }
@@ -34,6 +32,18 @@ class ExpeditionLootGenerator
                 'amount' => rand($guaranteedItem['min'], $guaranteedItem['max']),
             ];
         }
+
+        $robot = $expedition->robot;
+
+        $usedStorage = $robot->inventories()
+            ->with('resource')
+            ->get()
+            ->sum(function ($inventoryItem) {
+                return $inventoryItem->amount
+                    * $inventoryItem->resource->storage_size;
+            });
+
+        $freeStorage = $robot->ssd - $usedStorage;
 
         foreach ($generatedLoot as $item) {
             $resource = Resource::where('name', $item['resource'])->first();
@@ -52,13 +62,86 @@ class ExpeditionLootGenerator
                 ]
             );
 
+            $requiredStorage = $item['amount'] * $resource->storage_size;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Места нет вообще
+            |--------------------------------------------------------------------------
+            */
+
+            if ($freeStorage <= 0) {
+                ExpeditionLog::create([
+                    'expedition_id' => $expedition->id,
+                    'minute' => $expedition->duration_minutes,
+                    'event_type' => 'storage_full',
+                    'message' => 'Склад заполнен. Робот не смог унести: '
+                        . $resource->name,
+                    'event_time' => $expedition->finished_at,
+                ]);
+
+                continue;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Влезает только часть добычи
+            |--------------------------------------------------------------------------
+            */
+
+            if ($requiredStorage > $freeStorage) {
+                $canTake = floor($freeStorage / $resource->storage_size);
+
+                if ($canTake <= 0) {
+                    ExpeditionLog::create([
+                        'expedition_id' => $expedition->id,
+                        'minute' => $expedition->duration_minutes,
+                        'event_type' => 'storage_full',
+                        'message' => 'Недостаточно места для ресурса: '
+                            . $resource->name,
+                        'event_time' => $expedition->finished_at,
+                    ]);
+
+                    continue;
+                }
+
+                $inventory->increment('amount', $canTake);
+
+                $freeStorage -= $canTake * $resource->storage_size;
+
+                ExpeditionLog::create([
+                    'expedition_id' => $expedition->id,
+                    'minute' => $expedition->duration_minutes,
+                    'event_type' => 'loot_partial',
+                    'message' => 'Получено: '
+                        . $resource->name
+                        . ' +'
+                        . $canTake
+                        . '. Остальное не поместилось на складе.',
+                    'event_time' => $expedition->finished_at,
+                ]);
+
+                continue;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Всё помещается
+            |--------------------------------------------------------------------------
+            */
+
             $inventory->increment('amount', $item['amount']);
+
+            $freeStorage -= $requiredStorage;
 
             ExpeditionLog::create([
                 'expedition_id' => $expedition->id,
                 'minute' => $expedition->duration_minutes,
                 'event_type' => 'loot',
-                'message' => 'Получено: ' . $resource->name . ' +' . $item['amount'],
+                'message' => 'Получено: '
+                    . $resource->name
+                    . ' +'
+                    . $item['amount'],
                 'event_time' => $expedition->finished_at,
             ]);
         }

@@ -17,6 +17,11 @@ class Robot extends Model
         'ssd',
         'battery',
         'integrity',
+        'battery_updated_at',
+    ];
+
+    protected $casts = [
+        'battery_updated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

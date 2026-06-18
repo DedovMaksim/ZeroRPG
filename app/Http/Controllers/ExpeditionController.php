@@ -4,26 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Models\Expedition;
 use App\Models\Location;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
 use App\Services\ExpeditionLogGenerator;
+use Illuminate\Http\RedirectResponse;
 
 class ExpeditionController extends Controller
 {
-    public function start(Location $location): RedirectResponse
-    {
-        $user = Auth::user();
-        $robot = $user->robot;
+    public function start(
+        Location $location,
+        ExpeditionLogGenerator $logGenerator
+    ): RedirectResponse {
+        $robot = auth()->user()->robot;
 
         $activeExpedition = $robot->expeditions()
             ->where('status', 'in_progress')
-            ->exists();
+            ->first();
 
         if ($activeExpedition) {
             return redirect()
                 ->route('dashboard')
                 ->with('error', 'Робот уже находится в экспедиции.');
         }
+
+        if ($robot->battery < $location->battery_cost) {
+            return redirect()
+                ->route('dashboard')
+                ->with(
+                    'error',
+                    'Недостаточно энергии. Требуется: '
+                    . $location->battery_cost
+                    . '%, доступно: '
+                    . $robot->battery
+                    . '%.'
+                );
+        }
+
+        $robot->update([
+            'battery' => max(
+                0,
+                $robot->battery - $location->battery_cost
+            ),
+            'battery_updated_at' => now(),
+        ]);
 
         $durationMinutes = 5;
 
@@ -36,12 +57,10 @@ class ExpeditionController extends Controller
             'finished_at' => now()->addMinutes($durationMinutes),
         ]);
 
-        $generator = new ExpeditionLogGenerator();
-
-        $generator->generate($expedition);
+        $logGenerator->generate($expedition);
 
         return redirect()
             ->route('dashboard')
-            ->with('success', 'Экспедиция началась. Робот покинул базу.');
+            ->with('success', 'Робот отправлен в экспедицию.');
     }
 }

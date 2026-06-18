@@ -51,12 +51,24 @@
 
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">RAM</div>
-                                <div class="text-xl font-bold">{{ $robot->ram }} ГБ</div>
+                                <div class="text-xl font-bold">{{ $robot->ram }} bit</div>
                             </div>
-
+                            
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">SSD</div>
-                                <div class="text-xl font-bold">{{ $robot->ssd }} ГБ</div>
+                                <div class="text-2xl">
+                                    {{ $usedStorage }} / {{ $robot->ssd }} bit
+                                </div>
+
+                                @if ($usedStorage >= $robot->ssd)
+                                    <div class="mt-1 text-sm text-red-600">
+                                        Склад заполнен
+                                    </div>
+                                @elseif ($usedStorage >= $robot->ssd * 0.8)
+                                    <div class="mt-1 text-sm text-yellow-600">
+                                        Почти заполнено
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">

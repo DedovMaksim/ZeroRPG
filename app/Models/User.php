@@ -30,10 +30,11 @@ class User extends Authenticatable
                 'name' => 'Zero-' . str_pad((string) $user->id, 3, '0', STR_PAD_LEFT),
                 'version' => 1,
                 'cpu' => 1,
-                'ram' => 8,
-                'ssd' => 32,
+                'ram' => 4,
+                'ssd' => 8,
                 'battery' => 100,
                 'integrity' => 100,
+                'battery_updated_at' => now(),
             ]);
         });
     }
