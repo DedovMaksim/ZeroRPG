@@ -2,9 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Inventory;
-use App\Models\Resource;
 use App\Models\Robot;
+use App\Services\ExpeditionLootGenerator;
 
 class ExpeditionProcessor
 {
@@ -16,30 +15,15 @@ class ExpeditionProcessor
             ->get();
 
         foreach ($expeditions as $expedition) {
-            $loot = [
-                'metal_scrap' => 5,
-                'copper' => 2,
-            ];
-
-            foreach ($loot as $resourceSlug => $amount) {
-                $resource = Resource::where('slug', $resourceSlug)->firstOrFail();
-
-                $inventory = Inventory::firstOrCreate(
-                    [
-                        'robot_id' => $robot->id,
-                        'resource_id' => $resource->id,
-                    ],
-                    [
-                        'amount' => 0,
-                    ]
-                );
-
-                $inventory->increment('amount', $amount);
-            }
+            $this->lootGenerator->generate($expedition);
 
             $expedition->update([
                 'status' => 'completed',
             ]);
         }
     }
+
+    public function __construct(
+        private ExpeditionLootGenerator $lootGenerator
+    ) {}
 }

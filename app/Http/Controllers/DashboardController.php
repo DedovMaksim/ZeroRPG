@@ -14,6 +14,22 @@ class DashboardController extends Controller
 
         $processor->processCompletedExpeditions($robot);
 
-        return view('dashboard');
+        $activeExpedition = $robot->expeditions()
+            ->with(['location', 'logs'])
+            ->where('status', 'in_progress')
+            ->latest()
+            ->first();
+
+        $lastCompletedExpedition = $robot->expeditions()
+            ->with(['location', 'logs'])
+            ->where('status', 'completed')
+            ->latest()
+            ->first();
+
+        return view('dashboard', [
+            'robot' => $robot,
+            'activeExpedition' => $activeExpedition,
+            'lastCompletedExpedition' => $lastCompletedExpedition,
+        ]);
     }
 }
