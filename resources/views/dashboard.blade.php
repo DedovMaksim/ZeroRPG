@@ -8,10 +8,17 @@
     @php
         $robot = auth()->user()->robot;
         $inventories = $robot->inventories()->with('resource')->get();
+        $locations = \App\Models\Location::all();
     @endphp
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+            @if (session('success'))
+                <div class="mb-6 p-4 bg-green-100 text-green-800 rounded-lg">
+                    {{ session('success') }}
+                </div>
+            @endif
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-2xl font-bold mb-2">
@@ -49,6 +56,40 @@
                     </div>
                 </div>
 
+                <div class="mt-8">
+                    <h4 class="text-lg font-bold mb-4">Доступные локации</h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        @foreach ($locations as $location)
+                            <div class="p-4 border border-gray-200 rounded-lg">
+                                <h5 class="font-bold text-lg mb-2">
+                                    {{ $location->name }}
+                                </h5>
+
+                                <p class="text-sm text-gray-600 mb-4">
+                                    {{ $location->description }}
+                                </p>
+
+                                <div class="text-sm text-gray-500 mb-4">
+                                    <div>Сложность: {{ $location->difficulty }}</div>
+                                    <div>Расход батареи: {{ $location->battery_cost }}%</div>
+                                </div>
+
+                                <form method="POST" action="{{ route('expeditions.start', $location) }}">
+                                    @csrf
+
+                                    <button
+                                        type="submit"
+                                        class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700"
+                                    >
+                                        Отправить
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="p-4 border border-gray-200 rounded-lg">
                         <h4 class="text-lg font-bold mb-4">Склад</h4>
@@ -72,7 +113,12 @@
                     <div class="p-4 bg-black text-green-400 rounded-lg font-mono text-sm">
                         <p>&gt; Центральный ИИ: оператор подключён.</p>
                         <p>&gt; Робот {{ $robot->name }} активирован.</p>
-                        <p>&gt; Ожидание первой экспедиции...</p>
+
+                        @if (session('success'))
+                            <p>&gt; {{ session('success') }}</p>
+                        @else
+                            <p>&gt; Ожидание первой экспедиции...</p>
+                        @endif
                     </div>
                 </div>
             </div>

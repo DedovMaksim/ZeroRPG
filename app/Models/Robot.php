@@ -28,4 +28,9 @@ class Robot extends Model
     {
         return $this->hasMany(Inventory::class);
     }
+
+    public function expeditions(): HasMany
+    {
+        return $this->hasMany(Expedition::class);
+    }
 }
