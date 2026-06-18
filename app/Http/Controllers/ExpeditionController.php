@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expedition;
-use App\Models\Inventory;
 use App\Models\Location;
-use App\Models\Resource;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,37 +14,29 @@ class ExpeditionController extends Controller
         $user = Auth::user();
         $robot = $user->robot;
 
+        $activeExpedition = $robot->expeditions()
+            ->where('status', 'in_progress')
+            ->exists();
+
+        if ($activeExpedition) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', 'Робот уже находится в экспедиции.');
+        }
+
+        $durationMinutes = 5;
+
         Expedition::create([
             'robot_id' => $robot->id,
             'location_id' => $location->id,
-            'status' => 'completed',
+            'status' => 'in_progress',
+            'duration_minutes' => $durationMinutes,
             'started_at' => now(),
-            'finished_at' => now(),
+            'finished_at' => now()->addMinutes($durationMinutes),
         ]);
-
-        $loot = [
-            'metal_scrap' => 5,
-            'copper' => 2,
-        ];
-
-        foreach ($loot as $resourceSlug => $amount) {
-            $resource = Resource::where('slug', $resourceSlug)->firstOrFail();
-
-            $inventory = Inventory::firstOrCreate(
-                [
-                    'robot_id' => $robot->id,
-                    'resource_id' => $resource->id,
-                ],
-                [
-                    'amount' => 0,
-                ]
-            );
-
-            $inventory->increment('amount', $amount);
-        }
 
         return redirect()
             ->route('dashboard')
-            ->with('success', 'Экспедиция завершена. Робот вернулся с ресурсами.');
+            ->with('success', 'Экспедиция началась. Робот покинул базу.');
     }
 }

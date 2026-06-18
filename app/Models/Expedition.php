@@ -13,6 +13,7 @@ class Expedition extends Model
         'status',
         'started_at',
         'finished_at',
+        'duration_minutes',
     ];
 
     protected $casts = [

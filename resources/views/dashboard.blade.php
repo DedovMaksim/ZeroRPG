@@ -7,8 +7,18 @@
 
     @php
         $robot = auth()->user()->robot;
-        $inventories = $robot->inventories()->with('resource')->get();
+
+        $inventories = $robot->inventories()
+            ->with('resource')
+            ->get();
+
         $locations = \App\Models\Location::all();
+
+        $activeExpedition = $robot->expeditions()
+            ->with('location')
+            ->where('status', 'in_progress')
+            ->latest()
+            ->first();
     @endphp
 
     <div class="py-12">
@@ -17,6 +27,12 @@
             @if (session('success'))
                 <div class="mb-6 p-4 bg-green-100 text-green-800 rounded-lg">
                     {{ session('success') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-6 p-4 bg-red-100 text-red-800 rounded-lg">
+                    {{ session('error') }}
                 </div>
             @endif
 
@@ -55,6 +71,34 @@
                         <div class="text-xl font-bold">{{ $robot->integrity }}%</div>
                     </div>
                 </div>
+
+                @if ($activeExpedition)
+                    <div class="mt-8 p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
+                        <h4 class="text-lg font-bold mb-4">Активная экспедиция</h4>
+
+                        <div class="space-y-2 text-sm">
+                            <p>
+                                <span class="font-semibold">Локация:</span>
+                                {{ $activeExpedition->location->name }}
+                            </p>
+
+                            <p>
+                                <span class="font-semibold">Статус:</span>
+                                выполняется
+                            </p>
+
+                            <p>
+                                <span class="font-semibold">Длительность:</span>
+                                {{ $activeExpedition->duration_minutes }} мин.
+                            </p>
+
+                            <p>
+                                <span class="font-semibold">Завершение:</span>
+                                {{ $activeExpedition->finished_at->format('H:i') }}
+                            </p>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="mt-8">
                     <h4 class="text-lg font-bold mb-4">Доступные локации</h4>
@@ -116,8 +160,10 @@
 
                         @if (session('success'))
                             <p>&gt; {{ session('success') }}</p>
+                        @elseif (session('error'))
+                            <p>&gt; {{ session('error') }}</p>
                         @else
-                            <p>&gt; Ожидание первой экспедиции...</p>
+                            <p>&gt; Ожидание экспедиции...</p>
                         @endif
                     </div>
                 </div>
