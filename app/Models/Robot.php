@@ -17,7 +17,10 @@ class Robot extends Model
         'ssd',
         'battery',
         'integrity',
+        'scraps',
         'battery_updated_at',
+        'level',
+        'xp',
     ];
 
     protected $casts = [
@@ -37,5 +40,25 @@ class Robot extends Model
     public function expeditions(): HasMany
     {
         return $this->hasMany(Expedition::class);
+    }
+
+    public function xpForNextLevel(): int
+    {
+        return 100
+            + (($this->level - 1) * 50)
+            + (($this->level - 1) ** 2 * 25);
+    }
+
+    public function levelProgressPercent(): int
+    {
+        return min(
+            100,
+            (int)(($this->xp / $this->xpForNextLevel()) * 100)
+        );
+    }
+
+    public function maxBattery(): int
+    {
+        return 100 + (($this->level - 1) * 5);
     }
 }

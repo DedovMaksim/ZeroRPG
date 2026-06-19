@@ -15,11 +15,16 @@ class ExpeditionLootGenerator
 
         $generatedLoot = [];
 
+        $cpuBonus = min(
+            5,
+            floor($expedition->robot->cpu / 10)
+        );
+
         foreach ($lootTable as $lootItem) {
             if (rand(1, 100) <= $lootItem['chance']) {
                 $generatedLoot[] = [
                     'resource' => $lootItem['resource'],
-                    'amount' => rand($lootItem['min'], $lootItem['max']),
+                    'amount' => rand($lootItem['min'], $lootItem['max']) + $cpuBonus,
                 ];
             }
         }
@@ -29,7 +34,7 @@ class ExpeditionLootGenerator
 
             $generatedLoot[] = [
                 'resource' => $guaranteedItem['resource'],
-                'amount' => rand($guaranteedItem['min'], $guaranteedItem['max']),
+                'amount' => rand($guaranteedItem['min'], $guaranteedItem['max']) + $cpuBonus,
             ];
         }
 
@@ -64,12 +69,6 @@ class ExpeditionLootGenerator
 
             $requiredStorage = $item['amount'] * $resource->storage_size;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Места нет вообще
-            |--------------------------------------------------------------------------
-            */
-
             if ($freeStorage <= 0) {
                 ExpeditionLog::create([
                     'expedition_id' => $expedition->id,
@@ -82,12 +81,6 @@ class ExpeditionLootGenerator
 
                 continue;
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Влезает только часть добычи
-            |--------------------------------------------------------------------------
-            */
 
             if ($requiredStorage > $freeStorage) {
                 $canTake = floor($freeStorage / $resource->storage_size);
@@ -123,12 +116,6 @@ class ExpeditionLootGenerator
 
                 continue;
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Всё помещается
-            |--------------------------------------------------------------------------
-            */
 
             $inventory->increment('amount', $item['amount']);
 

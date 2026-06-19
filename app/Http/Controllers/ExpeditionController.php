@@ -46,7 +46,20 @@ class ExpeditionController extends Controller
             'battery_updated_at' => now(),
         ]);
 
-        $durationMinutes = 5;
+        $baseDuration = 3 + ($location->difficulty * 2);
+
+        $ramTier = log($robot->ram / 4, 2);
+
+        $ramReduction = min(
+            50,
+            $ramTier * 1.1
+        );
+
+        $durationMinutes = ceil(
+            $baseDuration * (1 - $ramReduction / 100)
+        );
+
+        $durationMinutes = max(1, $durationMinutes);
 
         $expedition = Expedition::create([
             'robot_id' => $robot->id,

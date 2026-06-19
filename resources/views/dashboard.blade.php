@@ -43,21 +43,78 @@
                             Автономный робот-клон серии Zero готов к работе.
                         </p>
 
+                        <div class="bg-amber-100 border border-amber-300 rounded-lg p-6 mb-6">
+                            <div class="text-sm uppercase tracking-wide text-amber-700">
+                                Валюта Центрального ИИ
+                            </div>
+
+                            <div class="text-4xl font-bold text-amber-900 mt-2">
+                                Скрапы: {{ $robot->scraps }}
+                            </div>
+
+                            <div class="text-sm text-amber-700 mt-2">
+                                Используются для покупки модулей и улучшений.
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <div class="text-sm uppercase tracking-wide text-blue-700">
+                                    Прогресс робота
+                                </div>
+
+                                <div class="text-2xl font-bold text-blue-900">
+                                    Уровень {{ $robot->level }}
+                                </div>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="text-sm text-blue-700">
+                                    XP
+                                </div>
+
+                                <div class="font-bold">
+                                    {{ $robot->xp }} / {{ $robot->xpForNextLevel() }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-full bg-blue-100 rounded-full h-3 overflow-hidden">
+                            <div
+                                class="bg-blue-600 h-3"
+                                style="width: {{ $robot->levelProgressPercent() }}%;"
+                            ></div>
+                        </div>
+
+                    </div>
+
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">CPU</div>
-                                <div class="text-xl font-bold">{{ $robot->cpu }}</div>
+                                <div class="text-xl font-bold">{{ $robot->cpu }} MHz</div>
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">RAM</div>
-                                <div class="text-xl font-bold">{{ $robot->ram }} bit</div>
+                                <div class="text-xl font-bold">{{ $robot->ram }} KB</div>
                             </div>
-                            
+
+                            <div class="p-4 bg-gray-100 rounded-lg">
+                                <div class="text-sm text-gray-500">Battery</div>
+                                <div class="text-xl font-bold">{{ $robot->battery }} / {{ $robot->maxBattery() }}%</div>
+                            </div>
+
+                            <div class="p-4 bg-gray-100 rounded-lg">
+                                <div class="text-sm text-gray-500">Integrity</div>
+                                <div class="text-xl font-bold">{{ $robot->integrity }}%</div>
+                            </div>
+
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">SSD</div>
                                 <div class="text-2xl">
-                                    {{ $usedStorage }} / {{ $robot->ssd }} bit
+                                    {{ $usedStorage }} / {{ $robot->ssd }} MB
                                 </div>
 
                                 @if ($usedStorage >= $robot->ssd)
@@ -69,16 +126,6 @@
                                         Почти заполнено
                                     </div>
                                 @endif
-                            </div>
-
-                            <div class="p-4 bg-gray-100 rounded-lg">
-                                <div class="text-sm text-gray-500">Battery</div>
-                                <div class="text-xl font-bold">{{ $robot->battery }}%</div>
-                            </div>
-
-                            <div class="p-4 bg-gray-100 rounded-lg">
-                                <div class="text-sm text-gray-500">Integrity</div>
-                                <div class="text-xl font-bold">{{ $robot->integrity }}%</div>
                             </div>
                         </div>
                     </div>
@@ -221,41 +268,114 @@
 
                 </div>
 
-                {{-- Локации --}}
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h4 class="text-lg font-bold mb-4">
-                        Доступные локации
-                    </h4>
+                {{-- Доступные локации и действия базы --}}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        @foreach ($locations as $location)
-                            <div class="p-4 border border-gray-200 rounded-lg flex flex-col">
-                                <h5 class="font-bold text-lg mb-2">
-                                    {{ $location->name }}
-                                </h5>
+                    {{-- Локации --}}
+                    <div class="w-full md:w-3/5 bg-white shadow-sm sm:rounded-lg p-6">
 
-                                <p class="text-sm text-gray-600 mb-4 flex-1">
-                                    {{ $location->description }}
-                                </p>
+                        <h4 class="text-lg font-bold mb-4">
+                            Доступные локации
+                        </h4>
 
-                                <div class="text-sm text-gray-500 mb-4">
-                                    <div>Сложность: {{ $location->difficulty }}</div>
-                                    <div>Расход батареи: {{ $location->battery_cost }}%</div>
+                        <div class="space-y-4">
+                            @foreach ($locations as $location)
+                                <div class="border rounded-lg p-4">
+
+                                    <h5 class="font-bold text-lg mb-2">
+                                        {{ $location->name }}
+                                    </h5>
+
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        {{ $location->description }}
+                                    </p>
+
+                                    <div class="text-sm text-gray-500 mb-4">
+                                        <div>Сложность: {{ $location->difficulty }}</div>
+                                        <div>Расход батареи: {{ $location->battery_cost }}%</div>
+                                    </div>
+
+                                    <form method="POST" action="{{ route('expeditions.start', $location) }}">
+                                        @csrf
+
+                                        <button
+                                            type="submit"
+                                            class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700"
+                                        >
+                                            Отправить в экспедицию
+                                        </button>
+                                    </form>
+
+                                </div>
+                            @endforeach
+                        </div>
+
+                    </div>
+
+                    {{-- Панель базы --}}
+                    <div class="w-full md:w-2/5 bg-white shadow-sm sm:rounded-lg p-6">
+
+                        <h4 class="text-lg font-bold mb-4">
+                            База
+                        </h4>
+
+                        <div class="space-y-4">
+
+                            <a href="{{ route('market.index') }}"
+                            class="block border border-amber-300 bg-amber-50 rounded-lg p-4 hover:bg-amber-100 transition">
+                                <div class="font-bold text-lg">
+                                    Комиссионка
                                 </div>
 
-                                <form method="POST" action="{{ route('expeditions.start', $location) }}">
-                                    @csrf
+                                <div class="text-sm text-gray-600 mt-1">
+                                    Сдача ресурсов и торговля оборудованием.
+                                </div>
+                            </a>
 
-                                    <button
-                                        type="submit"
-                                        class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700"
-                                    >
-                                        Отправить
-                                    </button>
-                                </form>
+                            <div class="border rounded-lg p-4 opacity-50">
+                                <div class="font-bold">
+                                    Модули
+                                </div>
+
+                                <div class="text-sm text-gray-500">
+                                    Скоро
+                                </div>
                             </div>
-                        @endforeach
+
+                            <div class="border rounded-lg p-4 opacity-50">
+                                <div class="font-bold">
+                                    Улучшения
+                                </div>
+
+                                <div class="text-sm text-gray-500">
+                                    Скоро
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg p-4 opacity-50">
+                                <div class="font-bold">
+                                    Архив экспедиций
+                                </div>
+
+                                <div class="text-sm text-gray-500">
+                                    Скоро
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg p-4 opacity-50">
+                                <div class="font-bold">
+                                    Задания Центрального ИИ
+                                </div>
+
+                                <div class="text-sm text-gray-500">
+                                    Скоро
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
+
                 </div>
 
                 {{-- Нижний ряд --}}

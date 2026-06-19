@@ -11,6 +11,7 @@ class Resource extends Model
         'name',
         'slug',
         'storage_size',
+        'scrap_value',
     ];
 
     public function inventories(): HasMany
