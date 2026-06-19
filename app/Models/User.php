@@ -26,7 +26,8 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::created(function (User $user) {
-            $user->robot()->create([
+
+            $robot = $user->robot()->create([
                 'name' => 'Zero-' . str_pad((string) $user->id, 3, '0', STR_PAD_LEFT),
                 'version' => 1,
                 'cpu' => 1,
@@ -35,6 +36,12 @@ class User extends Authenticatable
                 'battery' => 100,
                 'integrity' => 100,
                 'battery_updated_at' => now(),
+            ]);
+
+            $robot->base()->create([
+                'name' => 'База серии Zero',
+                'level' => 1,
+                'status' => 'emergency',
             ]);
         });
     }
