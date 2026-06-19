@@ -337,6 +337,17 @@
                                 </div>
                             </a>
 
+                            <a href="{{ route('inventory') }}"
+                                class="block border border-amber-300 bg-amber-50 rounded-lg p-4 hover:bg-amber-100 transition">
+                                    <div class="font-bold text-lg">
+                                        Инвентарь
+                                    </div>
+
+                                    <div class="text-sm text-gray-600 mt-1">
+                                        Экипировка робота, предметы и склад базы.
+                                    </div>
+                            </a>
+
                             <div class="border rounded-lg p-4 opacity-50">
                                 <div class="font-bold">
                                     Модули

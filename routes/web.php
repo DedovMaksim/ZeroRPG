@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\ArchiveController;
+use App\Http\Controllers\InventoryController;
 
 Route::view('/', 'welcome');
 
@@ -34,6 +35,10 @@ Route::post('/market/sell', [MarketController::class, 'sell'])
     
 Route::get('/archive', [ArchiveController::class, 'index'])
     ->middleware(['auth', 'verified'])
-    ->name('archive.index');    
+    ->name('archive.index');
+    
+Route::get('/inventory', [InventoryController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('inventory');    
 
 require __DIR__.'/auth.php';

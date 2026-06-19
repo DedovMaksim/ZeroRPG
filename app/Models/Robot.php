@@ -96,6 +96,21 @@ class Robot extends Model
         $this->save();
     }
 
+    public function usedStorage(): int
+    {
+        return $this->inventories()
+            ->with('resource')
+            ->get()
+            ->sum(function ($inventory) {
+                return $inventory->amount * $inventory->resource->storage_size;
+            });
+    }
+
+    public function totalStorage(): int
+    {
+        return $this->maxSsd();
+    }
+
     public function base(): HasOne
     {
         return $this->hasOne(Base::class);
