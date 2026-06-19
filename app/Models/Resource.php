@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Resource extends Model
 {
     protected $fillable = [
-        'name',
         'slug',
+        'name',
         'storage_size',
         'scrap_value',
     ];

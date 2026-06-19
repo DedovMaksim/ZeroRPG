@@ -21,6 +21,8 @@ class Robot extends Model
         'battery_updated_at',
         'level',
         'xp',
+        'logistics_level',
+        'logistics_xp',
     ];
 
     protected $casts = [
@@ -61,4 +63,36 @@ class Robot extends Model
     {
         return 100 + (($this->level - 1) * 5);
     }
+
+    public function xpForNextLogisticsLevel(): int
+    {
+        return 50 + (($this->logistics_level - 1) * 25);
+    }
+
+    public function logisticsBonusSsd(): int
+    {
+        return ($this->logistics_level - 1) * 2;
+    }
+
+    public function maxSsd(): int
+    {
+        return $this->ssd + $this->logisticsBonusSsd();
+    }
+
+    public function gainLogisticsXp(int $xp): void
+    {
+        if ($xp <= 0) {
+            return;
+        }
+
+        $this->logistics_xp += $xp;
+
+        while ($this->logistics_xp >= $this->xpForNextLogisticsLevel()) {
+            $this->logistics_xp -= $this->xpForNextLogisticsLevel();
+            $this->logistics_level++;
+        }
+
+        $this->save();
+    }
+    
 }

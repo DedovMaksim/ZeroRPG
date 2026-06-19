@@ -14,14 +14,12 @@ class ExpeditionLootGenerator
         $lootTable = $this->getLootTable($expedition->location->slug);
 
         $generatedLoot = [];
-
-        $cpuBonus = min(
-            5,
-            floor($expedition->robot->cpu / 10)
-        );
+        $reportLoot = [];
 
         foreach ($lootTable as $lootItem) {
             if (rand(1, 100) <= $lootItem['chance']) {
+                $cpuBonus = min(5, floor($expedition->robot->cpu / 10));
+
                 $generatedLoot[] = [
                     'resource' => $lootItem['resource'],
                     'amount' => rand($lootItem['min'], $lootItem['max']) + $cpuBonus,
@@ -31,6 +29,8 @@ class ExpeditionLootGenerator
 
         if (empty($generatedLoot)) {
             $guaranteedItem = $lootTable[array_rand($lootTable)];
+
+            $cpuBonus = min(5, floor($expedition->robot->cpu / 10));
 
             $generatedLoot[] = [
                 'resource' => $guaranteedItem['resource'],
@@ -48,7 +48,7 @@ class ExpeditionLootGenerator
                     * $inventoryItem->resource->storage_size;
             });
 
-        $freeStorage = $robot->ssd - $usedStorage;
+        $freeStorage = $robot->maxSsd() - $usedStorage;
 
         foreach ($generatedLoot as $item) {
             $resource = Resource::where('name', $item['resource'])->first();
@@ -99,8 +99,12 @@ class ExpeditionLootGenerator
                 }
 
                 $inventory->increment('amount', $canTake);
-
                 $freeStorage -= $canTake * $resource->storage_size;
+
+                $reportLoot[] = [
+                    'resource' => $resource->name,
+                    'amount' => $canTake,
+                ];
 
                 ExpeditionLog::create([
                     'expedition_id' => $expedition->id,
@@ -118,8 +122,12 @@ class ExpeditionLootGenerator
             }
 
             $inventory->increment('amount', $item['amount']);
-
             $freeStorage -= $requiredStorage;
+
+            $reportLoot[] = [
+                'resource' => $resource->name,
+                'amount' => $item['amount'],
+            ];
 
             ExpeditionLog::create([
                 'expedition_id' => $expedition->id,
@@ -133,83 +141,18 @@ class ExpeditionLootGenerator
             ]);
         }
 
-        return $generatedLoot;
+        return $reportLoot;
     }
 
     private function getLootTable(string $locationSlug): array
     {
-        return match ($locationSlug) {
-            'drone_dump' => [
-                [
-                    'resource' => 'Металлолом',
-                    'chance' => 95,
-                    'min' => 3,
-                    'max' => 7,
-                ],
-                [
-                    'resource' => 'Медь',
-                    'chance' => 35,
-                    'min' => 1,
-                    'max' => 3,
-                ],
-                [
-                    'resource' => 'Электроника',
-                    'chance' => 10,
-                    'min' => 1,
-                    'max' => 1,
-                ],
+        return config("locations.{$locationSlug}.loot", [
+            [
+                'resource' => 'Металлолом',
+                'chance' => 100,
+                'min' => 1,
+                'max' => 3,
             ],
-
-            'abandoned_factory' => [
-                [
-                    'resource' => 'Металлолом',
-                    'chance' => 65,
-                    'min' => 2,
-                    'max' => 5,
-                ],
-                [
-                    'resource' => 'Медь',
-                    'chance' => 75,
-                    'min' => 2,
-                    'max' => 5,
-                ],
-                [
-                    'resource' => 'Электроника',
-                    'chance' => 20,
-                    'min' => 1,
-                    'max' => 1,
-                ],
-            ],
-
-            'old_substation' => [
-                [
-                    'resource' => 'Металлолом',
-                    'chance' => 30,
-                    'min' => 1,
-                    'max' => 3,
-                ],
-                [
-                    'resource' => 'Медь',
-                    'chance' => 70,
-                    'min' => 2,
-                    'max' => 4,
-                ],
-                [
-                    'resource' => 'Электроника',
-                    'chance' => 55,
-                    'min' => 1,
-                    'max' => 2,
-                ],
-            ],
-
-            default => [
-                [
-                    'resource' => 'Металлолом',
-                    'chance' => 100,
-                    'min' => 1,
-                    'max' => 3,
-                ],
-            ],
-        };
+        ]);
     }
 }

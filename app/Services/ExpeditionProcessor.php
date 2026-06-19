@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Expedition;
 use App\Models\ExpeditionLog;
+use App\Models\ExpeditionReport;
 use App\Models\Robot;
 
 class ExpeditionProcessor
@@ -23,9 +24,19 @@ class ExpeditionProcessor
             $this->writeBatteryCostLog($expedition);
             $this->writeRandomEventLog($expedition);
 
-            $this->lootGenerator->generate($expedition);
+            $loot = $this->lootGenerator->generate($expedition);
 
-            $this->giveExperience($robot, $expedition);
+            $xp = $this->giveExperience($robot, $expedition);
+
+            ExpeditionReport::create([
+                'robot_id' => $robot->id,
+                'location_id' => $expedition->location_id,
+                'location_name' => $expedition->location->name,
+                'resources' => $loot,
+                'xp_gained' => $xp,
+                'started_at' => $expedition->started_at,
+                'finished_at' => $expedition->finished_at,
+            ]);
 
             $expedition->update([
                 'status' => 'completed',
@@ -33,14 +44,20 @@ class ExpeditionProcessor
         }
     }
 
-    private function giveExperience(Robot $robot, Expedition $expedition): void
+    private function giveExperience(Robot $robot, Expedition $expedition): int
     {
-        $xp = match ($expedition->location->slug) {
-            'drone_dump' => random_int(1, 3),
-            'abandoned_factory' => random_int(2, 4),
-            'old_substation' => random_int(3, 5),
-            default => 1,
-        };
+        $xpConfig = config(
+            "locations.{$expedition->location->slug}.xp",
+            [
+                'min' => 1,
+                'max' => 1,
+            ]
+        );
+
+        $xp = random_int(
+            $xpConfig['min'],
+            $xpConfig['max']
+        );
 
         $robot->xp += $xp;
 
@@ -49,12 +66,13 @@ class ExpeditionProcessor
         $robot->save();
 
         $this->writeXpLog($expedition, $xp);
+
+        return $xp;
     }
 
     private function checkLevelUp(Robot $robot, Expedition $expedition): void
     {
         while ($robot->xp >= $robot->xpForNextLevel()) {
-
             $robot->xp -= $robot->xpForNextLevel();
 
             $robot->level++;
@@ -67,7 +85,6 @@ class ExpeditionProcessor
             $robot->cpu += 1;
             $robot->ram = 4 * (2 ** ($robot->level - 1));
             $robot->ssd += 1;
-
             $robot->battery += 5;
             $robot->integrity += 5;
         }
@@ -102,7 +119,8 @@ class ExpeditionProcessor
             'expedition_id' => $expedition->id,
             'minute' => $expedition->duration_minutes,
             'event_type' => 'battery_cost',
-            'message' => 'Потрачено энергии на маршрут: Battery -' . $expedition->location->battery_cost . '%',
+            'message' => 'Потрачено энергии на маршрут: Battery -' .
+                $expedition->location->battery_cost . '%',
             'event_time' => $expedition->finished_at,
         ]);
     }

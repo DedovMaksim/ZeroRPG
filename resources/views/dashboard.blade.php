@@ -44,17 +44,14 @@
                         </p>
 
                         <div class="bg-amber-100 border border-amber-300 rounded-lg p-6 mb-6">
-                            <div class="text-sm uppercase tracking-wide text-amber-700">
-                                Валюта Центрального ИИ
+
+                            <div class="text-4xl font-bold text-amber-900">
+                                <div class="font-bold">
+                                    <span class="text-2xl">Скрапы:</span>
+                                    <span class="text-xl">⛭ {{ $robot->scraps }}</span>
+                                </div>
                             </div>
 
-                            <div class="text-4xl font-bold text-amber-900 mt-2">
-                                Скрапы: {{ $robot->scraps }}
-                            </div>
-
-                            <div class="text-sm text-amber-700 mt-2">
-                                Используются для покупки модулей и улучшений.
-                            </div>
                         </div>
 
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
@@ -114,14 +111,14 @@
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">SSD</div>
                                 <div class="text-2xl">
-                                    {{ $usedStorage }} / {{ $robot->ssd }} MB
+                                    {{ $usedStorage }} / {{ $robot->maxSsd() }} MB
                                 </div>
 
-                                @if ($usedStorage >= $robot->ssd)
+                                @if ($usedStorage >= $robot->maxSsd())
                                     <div class="mt-1 text-sm text-red-600">
                                         Склад заполнен
                                     </div>
-                                @elseif ($usedStorage >= $robot->ssd * 0.8)
+                                @elseif ($usedStorage >= $robot->maxSsd() * 0.8)
                                     <div class="mt-1 text-sm text-yellow-600">
                                         Почти заполнено
                                     </div>
@@ -152,10 +149,18 @@
                                     </div>
                                 </div>
 
+                                @php
+                                    $durationSeconds = $activeExpedition->started_at
+                                        ->diffInSeconds($activeExpedition->finished_at);
+
+                                    $durationMinutes = intdiv($durationSeconds, 60);
+                                    $durationSecondsRest = $durationSeconds % 60;
+                                @endphp
+
                                 <div>
                                     <div class="text-gray-500">Длительность</div>
                                     <div class="font-semibold">
-                                        {{ $activeExpedition->duration_minutes }} мин.
+                                        {{ $durationMinutes }} мин. {{ $durationSecondsRest }} сек.
                                     </div>
                                 </div>
 
@@ -352,15 +357,16 @@
                                 </div>
                             </div>
 
-                            <div class="border rounded-lg p-4 opacity-50">
-                                <div class="font-bold">
+                            <a href="{{ route('archive.index') }}"
+                            class="block border border-amber-300 bg-amber-50 rounded-lg p-4 hover:bg-amber-100 transition">
+                                <div class="font-bold text-lg">
                                     Архив экспедиций
                                 </div>
 
                                 <div class="text-sm text-gray-500">
                                     Скоро
                                 </div>
-                            </div>
+                            </a>
 
                             <div class="border rounded-lg p-4 opacity-50">
                                 <div class="font-bold">
@@ -372,6 +378,36 @@
                                 </div>
                             </div>
 
+                        </div>
+
+                        <div class="mt-6 border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-bold mb-4">
+                                Специализации
+                            </h3>
+
+                            <div class="rounded-lg bg-gray-50 p-4">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div class="text-base font-bold">
+                                            Логист
+                                        </div>
+
+                                        <div class="text-sm text-gray-600">
+                                            Уровень {{ $robot->logistics_level }}
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right text-sm">
+                                        <div class="text-gray-500">
+                                            XP
+                                        </div>
+
+                                        <div class="font-bold">
+                                            {{ $robot->logistics_xp }} / {{ $robot->xpForNextLogisticsLevel() }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </div>

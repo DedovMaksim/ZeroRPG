@@ -47,6 +47,8 @@ class MarketController extends Controller
 
         $robot->increment('scraps', $earnedScraps);
 
+        $robot->gainLogisticsXp($earnedScraps);
+
         $inventoryItem->decrement('amount', $validated['amount']);
 
         if ($inventoryItem->fresh()->amount <= 0) {
@@ -55,7 +57,7 @@ class MarketController extends Controller
 
         return redirect()
             ->route('market.index')
-            ->with('success', "Получено {$earnedScraps} скрапов.");
+            ->with('success', "Получено {$earnedScraps} скрапов. Логист получил {$earnedScraps} XP.");
     }
 
     public function sellAll(): RedirectResponse
@@ -82,13 +84,15 @@ class MarketController extends Controller
 
         $robot->increment('scraps', $totalScraps);
 
+        $robot->gainLogisticsXp($totalScraps);
+
         $robot->inventories()->delete();
 
         return redirect()
             ->route('market.index')
             ->with(
                 'success',
-                "Все ресурсы сданы. Получено {$totalScraps} скрапов."
+                "Все ресурсы сданы. Получено {$totalScraps} скрапов. Логист получил {$totalScraps} XP."
             );
     }
 }

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MarketController;
+use App\Http\Controllers\ArchiveController;
 
 Route::view('/', 'welcome');
 
@@ -29,6 +30,10 @@ Route::post('/market/sell-all', [MarketController::class, 'sellAll'])
     
 Route::post('/market/sell', [MarketController::class, 'sell'])
     ->middleware(['auth', 'verified'])
-    ->name('market.sell');    
+    ->name('market.sell');
+    
+Route::get('/archive', [ArchiveController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('archive.index');    
 
 require __DIR__.'/auth.php';

@@ -55,11 +55,13 @@ class ExpeditionController extends Controller
             $ramTier * 1.1
         );
 
-        $durationMinutes = ceil(
-            $baseDuration * (1 - $ramReduction / 100)
+        $durationSeconds = (int) round(
+            $baseDuration * 60 * (1 - $ramReduction / 100)
         );
 
-        $durationMinutes = max(1, $durationMinutes);
+        $durationSeconds = max(60, $durationSeconds);
+
+        $durationMinutes = (int) ceil($durationSeconds / 60);
 
         $expedition = Expedition::create([
             'robot_id' => $robot->id,
@@ -67,7 +69,7 @@ class ExpeditionController extends Controller
             'status' => 'in_progress',
             'duration_minutes' => $durationMinutes,
             'started_at' => now(),
-            'finished_at' => now()->addMinutes($durationMinutes),
+            'finished_at' => now()->addSeconds($durationSeconds),
         ]);
 
         $logGenerator->generate($expedition);
