@@ -12,6 +12,7 @@ class InventoryController extends Controller
 
         $warehouse = $robot->base
             ->buildings()
+            ->with('warehouseInventories.resource')
             ->where('key', 'warehouse')
             ->where('status', 'active')
             ->first();

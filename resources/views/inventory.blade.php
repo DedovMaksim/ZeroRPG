@@ -14,6 +14,18 @@
                     Инвентарь робота {{ $robot->name }}
                 </h3>
 
+                @if (session('success'))
+                    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if (session('error'))
+                    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                     <div class="border rounded-xl p-5">
@@ -39,26 +51,116 @@
                         </h4>
 
                         <div class="space-y-4">
+
                             <div class="bg-gray-50 rounded-lg p-4">
-                                <div class="font-semibold">SSD робота</div>
-                                <div class="text-gray-600">
-                                    {{ $robot->usedStorage() }} / {{ $robot->totalStorage() }} MB
+                                <div class="flex justify-between items-center">
+                                    <div class="font-semibold">
+                                        SSD робота
+                                    </div>
+
+                                    <div class="text-gray-600">
+                                        {{ $robot->usedStorage() }} / {{ $robot->totalStorage() }} MB
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 border-t pt-4">
+                                    @forelse ($robot->inventories as $item)
+                                        <div class="flex items-center justify-between gap-3 text-sm py-2">
+                                            <div>
+                                                {{ $item->resource->name }}
+                                            </div>
+
+                                            <div class="flex items-center gap-2">
+                                                <span>×{{ $item->amount }}</span>
+
+                                                @if ($warehouse)
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('warehouse.deposit', $item) }}"
+                                                        class="flex items-center gap-2"
+                                                    >
+                                                        @csrf
+
+                                                        <input
+                                                            type="number"
+                                                            name="amount"
+                                                            value="{{ $item->amount }}"
+                                                            min="1"
+                                                            max="{{ $item->amount }}"
+                                                            class="w-20 rounded-lg border-gray-300 text-sm"
+                                                        >
+
+                                                        <button
+                                                            type="submit"
+                                                            class="px-3 py-1 bg-zinc-800 text-white rounded-lg text-sm"
+                                                        >
+                                                            На склад
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-sm text-gray-500">
+                                            Пусто
+                                        </div>
+                                    @endforelse
                                 </div>
                             </div>
 
                             @if ($warehouse)
 
                                 <div class="bg-gray-50 rounded-lg p-4">
-                                    <div class="font-semibold">
-                                        Склад базы
+                                    <div class="flex justify-between items-center">
+                                        <div class="font-semibold">
+                                            Склад базы
+                                        </div>
+
+                                        <div class="text-gray-600">
+                                            {{ $warehouse->usedStorage() }} / {{ $warehouse->capacity }} MB
+                                        </div>
                                     </div>
 
-                                    <div class="text-gray-600">
-                                        0 / {{ $warehouse->capacity }} MB
-                                    </div>
+                                    <div class="mt-4 border-t pt-4">
+                                        @forelse ($warehouse->warehouseInventories as $item)
+                                            <div class="flex items-center justify-between gap-3 text-sm py-2">
+                                                <div>
+                                                    {{ $item->resource->name }}
+                                                </div>
 
-                                    <div class="text-sm text-green-600 mt-1">
-                                        Склад восстановлен.
+                                                <div class="flex items-center gap-2">
+                                                    <span>×{{ $item->amount }}</span>
+
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('warehouse.withdraw', $item) }}"
+                                                        class="flex items-center gap-2"
+                                                    >
+                                                        @csrf
+
+                                                        <input
+                                                            type="number"
+                                                            name="amount"
+                                                            value="{{ $item->amount }}"
+                                                            min="1"
+                                                            max="{{ $item->amount }}"
+                                                            class="w-20 rounded-lg border-gray-300 text-sm"
+                                                        >
+
+                                                        <button
+                                                            type="submit"
+                                                            class="px-3 py-1 bg-zinc-800 text-white rounded-lg text-sm"
+                                                        >
+                                                            На SSD
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="text-sm text-gray-500">
+                                                Пусто
+                                            </div>
+                                        @endforelse
                                     </div>
                                 </div>
 
@@ -79,6 +181,7 @@
                                 </div>
 
                             @endif
+
                         </div>
                     </div>
 
