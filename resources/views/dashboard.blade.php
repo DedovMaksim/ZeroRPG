@@ -379,15 +379,16 @@
                                 </div>
                             </a>
 
-                            <div class="border rounded-lg p-4 opacity-50">
-                                <div class="font-bold">
-                                    Задания Центрального ИИ
-                                </div>
+                            <a href="{{ route('central-ai') }}" 
+                            class="block border border-amber-300 bg-amber-50 rounded-lg p-4 hover:bg-amber-100 transition">
+                                    <div class="font-bold text-lg">
+                                        Задания Центрального ИИ
+                                    </div>
 
-                                <div class="text-sm text-gray-500">
-                                    Скоро
-                                </div>
-                            </div>
+                                    <div class="text-sm text-gray-500">
+                                        Строительство, восстановление базы и особые поручения.
+                                    </div>
+                            </a>
 
                         </div>
 

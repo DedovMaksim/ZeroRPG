@@ -46,15 +46,39 @@
                                 </div>
                             </div>
 
-                            <div class="bg-gray-50 rounded-lg p-4">
-                                <div class="font-semibold">Склад базы</div>
-                                <div class="text-gray-600">
-                                    Недоступен
+                            @if ($warehouse)
+
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="font-semibold">
+                                        Склад базы
+                                    </div>
+
+                                    <div class="text-gray-600">
+                                        0 / {{ $warehouse->capacity }} MB
+                                    </div>
+
+                                    <div class="text-sm text-green-600 mt-1">
+                                        Склад восстановлен.
+                                    </div>
                                 </div>
-                                <div class="text-sm text-amber-600 mt-1">
-                                    Требуется восстановить складской комплекс.
+
+                            @else
+
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="font-semibold">
+                                        Склад базы
+                                    </div>
+
+                                    <div class="text-gray-600">
+                                        Недоступен
+                                    </div>
+
+                                    <div class="text-sm text-amber-600 mt-1">
+                                        Требуется восстановить складской комплекс.
+                                    </div>
                                 </div>
-                            </div>
+
+                            @endif
                         </div>
                     </div>
 

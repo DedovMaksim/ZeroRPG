@@ -6,6 +6,8 @@ use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\CentralAiController;
+use App\Http\Controllers\ConstructionController;
 
 Route::view('/', 'welcome');
 
@@ -39,6 +41,14 @@ Route::get('/archive', [ArchiveController::class, 'index'])
     
 Route::get('/inventory', [InventoryController::class, 'index'])
     ->middleware(['auth', 'verified'])
-    ->name('inventory');    
+    ->name('inventory');
+    
+Route::get('/central-ai', [CentralAiController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('central-ai');
+    
+Route::post('/construction/requirements/{requirement}/transfer', [ConstructionController::class, 'transfer'])
+    ->middleware(['auth', 'verified'])
+    ->name('construction.transfer');    
 
 require __DIR__.'/auth.php';
