@@ -118,7 +118,7 @@ class Robot extends Model
 
     public function totalStorage(): int
     {
-        return $this->maxSsd();
+        return $this->stats()->maxSsd($this);
     }
 
     public function base(): HasOne
