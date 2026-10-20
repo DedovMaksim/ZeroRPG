@@ -65,7 +65,9 @@ class CentralAiOverviewTest extends TestCase
             ->assertOk()
             ->assertSee('Вместимость 0 / 80')
             ->assertSee('Максимальный доступный уровень достигнут')
-            ->assertSee('Ремонт робота пока не доступен')
+            ->assertSee('Прочность робота')
+            ->assertSee('Отремонтировать')
+            ->assertSee('Робот полностью исправен')
             ->assertDontSee('Улучшить склад');
     }
 
