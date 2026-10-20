@@ -59,6 +59,8 @@ class ExpeditionProcessor
             $xpConfig['max']
         );
 
+        $xp = max(0, (int) round($xp * (100 + $robot->stats()->xpPercent($robot)) / 100));
+
         $robot->xp += $xp;
 
         $this->checkLevelUp($robot, $expedition);
