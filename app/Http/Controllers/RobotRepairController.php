@@ -34,13 +34,19 @@ class RobotRepairController extends Controller
                 return 'full';
             }
 
+            $cost = (int) config('repair.cost');
+            $recovery = (int) config('repair.integrity_per_repair');
+
+            if ($cost <= 0 || $recovery <= 0) {
+                return 'misconfigured';
+            }
+
             $resource = Resource::where('slug', config('repair.resource'))->first();
 
             if (! $resource) {
                 return 'resource_missing';
             }
 
-            $cost = (int) config('repair.cost');
             $inventory = $robot->inventories()
                 ->where('resource_id', $resource->id)
                 ->lockForUpdate()
@@ -56,7 +62,7 @@ class RobotRepairController extends Controller
                 $inventory->decrement('amount', $cost);
             }
 
-            $robot->increment('integrity', min((int) config('repair.integrity_per_repair'), $missing));
+            $robot->increment('integrity', min($recovery, $missing));
 
             return 'repaired';
         });
@@ -66,6 +72,7 @@ class RobotRepairController extends Controller
             'unavailable' => back()->with('error', 'Сначала постройте ремонтный отсек.'),
             'expedition' => back()->with('error', 'Нельзя ремонтировать робота во время экспедиции.'),
             'insufficient' => back()->with('error', 'Недостаточно металлолома для ремонта.'),
+            'misconfigured' => back()->with('error', 'Конфигурация ремонта недоступна.'),
             'resource_missing' => back()->with('error', 'Ресурс для ремонта не найден.'),
             default => back()->with('error', 'Прочность робота уже максимальна.'),
         };
