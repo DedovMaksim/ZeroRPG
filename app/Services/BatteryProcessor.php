@@ -8,7 +8,7 @@ class BatteryProcessor
 {
     public function process(Robot $robot): void
     {
-        $maxBattery = $robot->maxBattery();
+        $maxBattery = $robot->stats()->maxBattery($robot);
 
         if ($robot->battery >= $maxBattery) {
             return;
@@ -26,7 +26,7 @@ class BatteryProcessor
         }
 
         // 100% за 25 минут
-        $chargePerMinute = 100 / 25;
+        $chargePerMinute = (100 / 25) * max(0, 100 + $robot->stats()->chargeRatePercent($robot)) / 100;
 
         $restoredBattery = floor(
             $minutesPassed * $chargePerMinute
