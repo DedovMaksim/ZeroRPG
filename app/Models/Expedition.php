@@ -15,6 +15,7 @@ class Expedition extends Model
         'started_at',
         'finished_at',
         'duration_minutes',
+        'battery_cost_paid',
     ];
 
     protected $casts = [
