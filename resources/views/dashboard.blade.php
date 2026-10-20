@@ -180,15 +180,15 @@
                                 $elapsedMinutes = $activeExpedition->started_at->diffInMinutes(now());
                             @endphp
 
-                            <div class="space-y-1 text-sm font-mono bg-black text-green-400 p-4 rounded-lg min-h-32">
+                            <div class="space-y-2 text-sm font-mono bg-gray-950 text-green-300 p-4 rounded-lg min-h-32 max-h-96 overflow-y-auto" role="log" aria-label="Журнал экспедиции">
                                 @foreach ($activeExpedition->logs as $log)
-                                    @if ($log->minute <= $elapsedMinutes)
+                                    @if ($log->event_time->lte(now()))
                                         <div>
-                                            <span class="text-green-600">
-                                                [{{ $log->event_time->format('H:i') }}]
+                                            <span class="text-green-500">
+                                                [{{ $log->event_time->format('H:i:s') }}]
                                             </span>
 
-                                            {{ $log->message }}
+                                            <span class="{{ in_array($log->event_type, ['critical_event', 'emergency_return']) ? 'text-red-300 font-bold' : ($log->event_type === 'random_event' ? 'text-amber-200' : 'text-green-300') }}">{{ $log->message }}</span>
                                         </div>
                                     @endif
                                 @endforeach
@@ -243,14 +243,14 @@
                                 Журнал экспедиции
                             </h5>
 
-                            <div class="space-y-1 text-sm font-mono bg-black text-green-400 p-4 rounded-lg min-h-32">
+                            <div class="space-y-2 text-sm font-mono bg-gray-950 text-green-300 p-4 rounded-lg min-h-32 max-h-96 overflow-y-auto" role="log" aria-label="Журнал экспедиции">
                                 @foreach ($lastCompletedExpedition->logs as $log)
                                     <div>
-                                        <span class="text-green-600">
-                                            [{{ $log->event_time->format('H:i') }}]
+                                        <span class="text-green-500">
+                                            [{{ $log->event_time->format('H:i:s') }}]
                                         </span>
 
-                                        {{ $log->message }}
+                                        <span class="{{ in_array($log->event_type, ['critical_event', 'emergency_return']) ? 'text-red-300 font-bold' : ($log->event_type === 'random_event' ? 'text-amber-200' : 'text-green-300') }}">{{ $log->message }}</span>
                                     </div>
                                 @endforeach
                             </div>
