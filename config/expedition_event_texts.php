@@ -5,7 +5,7 @@
  * Pure flavor: never infer rewards, damage or stat changes from these strings.
  * Event keys must match config/expedition_events.php.
  */
-return {
+return [
     'wasteland_mechanic' => [
         'Из тумана вышла фигура в сварочной маске. Мастер осмотрел корпус Zero и молча протянул ладонь к сервисному разъёму.',
         'На краю дороги горел одинокий фонарь. Под ним старый механик собирал микросхемы из останков боевых машин.',
