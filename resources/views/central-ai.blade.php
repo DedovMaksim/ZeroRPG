@@ -107,8 +107,49 @@
                                 </div>
                                 @if ($building)
                                     <p class="text-gray-600 mt-2">Уровень {{ $building->level }} · {{ $building->status === 'active' ? 'Активен' : $building->status }}</p>
-                                    @if ($key === 'repair_bay')
-                                        <p class="text-sm text-gray-500 mt-2">Ремонт робота пока не доступен.</p>
+                                    @if ($key === 'repair_bay' && $building->status === 'active')
+                                        @php
+                                            $maxIntegrity = $robot->maxIntegrity();
+                                            $currentIntegrity = $robot->integrity;
+                                            $integrityPercent = $maxIntegrity > 0 ? min(100, max(0, round($currentIntegrity / $maxIntegrity * 100))) : 0;
+                                            $repairConfigured = $repairCost > 0 && $repairRecovery > 0;
+                                            $canRepair = $repairConfigured
+                                                && $currentIntegrity < $maxIntegrity
+                                                && $repairResourceAvailable >= $repairCost
+                                                && ! $repairInExpedition;
+                                        @endphp
+                                        <div class="mt-4 rounded-lg bg-slate-50 border p-4">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <p class="font-semibold">Прочность робота</p>
+                                                <p class="font-semibold">{{ $currentIntegrity }} / {{ $maxIntegrity }}</p>
+                                            </div>
+                                            <div class="h-3 bg-gray-200 rounded-full overflow-hidden mt-2"
+                                                 role="progressbar" aria-label="Прочность робота"
+                                                 aria-valuenow="{{ $currentIntegrity }}" aria-valuemin="0" aria-valuemax="{{ $maxIntegrity }}">
+                                                <div class="h-full bg-green-600" style="width: {{ $integrityPercent }}%"></div>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-3">
+                                                Один ремонт: до +{{ $repairRecovery }} прочности · {{ $repairResourceName }} ×{{ $repairCost }}
+                                            </p>
+                                            <p class="text-sm text-gray-600 mt-1">На SSD: {{ $repairResourceAvailable }}</p>
+                                            @if (! $repairConfigured)
+                                                <p class="text-sm text-red-700 mt-2">Ремонт временно недоступен.</p>
+                                            @elseif ($currentIntegrity >= $maxIntegrity)
+                                                <p class="text-sm text-green-700 mt-2">Робот полностью исправен.</p>
+                                            @elseif ($repairInExpedition)
+                                                <p class="text-sm text-amber-700 mt-2">Дождитесь возвращения робота из экспедиции.</p>
+                                            @elseif ($repairResourceAvailable < $repairCost)
+                                                <p class="text-sm text-amber-700 mt-2">Недостаточно материалов для ремонта.</p>
+                                            @endif
+                                            <form method="POST" action="{{ route('robot.repair') }}" class="mt-3">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-4 py-2 bg-zinc-800 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        @disabled(! $canRepair)>
+                                                    Отремонтировать
+                                                </button>
+                                            </form>
+                                        </div>
                                     @endif
                                 @elseif ($hasProject)
                                     <p class="text-amber-700 mt-2">Передайте материалы в проект ниже.</p>
