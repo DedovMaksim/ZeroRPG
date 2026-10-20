@@ -70,6 +70,7 @@ class ExpeditionController extends Controller
             'location_id' => $location->id,
             'status' => 'in_progress',
             'duration_minutes' => $durationMinutes,
+            'battery_cost_paid' => $energyCost,
             'started_at' => now(),
             'finished_at' => now()->addSeconds($durationSeconds),
         ]);
