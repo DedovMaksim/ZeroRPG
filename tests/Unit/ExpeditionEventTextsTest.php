@@ -11,7 +11,7 @@ class ExpeditionEventTextsTest extends TestCase
         $events = config('expedition_events');
         $texts = config('expedition_event_texts');
 
-        $this->assertSameCanonicalizing(array_keys($events), array_keys($texts));
+        $this->assertEqualsCanonicalizing(array_keys($events), array_keys($texts));
 
         foreach ($texts as $key => $variants) {
             $this->assertCount(8, $variants, $key);
