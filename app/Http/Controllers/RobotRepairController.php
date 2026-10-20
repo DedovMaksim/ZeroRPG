@@ -28,7 +28,7 @@ class RobotRepairController extends Controller
                 return 'expedition';
             }
 
-            $missing = $robot->maxIntegrity() - $robot->integrity;
+            $missing = $robot->stats()->maxIntegrity($robot) - $robot->integrity;
 
             if ($missing <= 0) {
                 return 'full';
