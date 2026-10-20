@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Resource;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +34,29 @@ class RobotRepairController extends Controller
                 return 'full';
             }
 
-            $robot->increment('integrity', min(10, $missing));
+            $resource = Resource::where('slug', config('repair.resource'))->first();
+
+            if (! $resource) {
+                return 'resource_missing';
+            }
+
+            $cost = (int) config('repair.cost');
+            $inventory = $robot->inventories()
+                ->where('resource_id', $resource->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $inventory || $inventory->amount < $cost) {
+                return 'insufficient';
+            }
+
+            if ($inventory->amount === $cost) {
+                $inventory->delete();
+            } else {
+                $inventory->decrement('amount', $cost);
+            }
+
+            $robot->increment('integrity', min((int) config('repair.integrity_per_repair'), $missing));
 
             return 'repaired';
         });
@@ -42,6 +65,8 @@ class RobotRepairController extends Controller
             'repaired' => back()->with('success', 'Робот отремонтирован: прочность восстановлена до 10 единиц.'),
             'unavailable' => back()->with('error', 'Сначала постройте ремонтный отсек.'),
             'expedition' => back()->with('error', 'Нельзя ремонтировать робота во время экспедиции.'),
+            'insufficient' => back()->with('error', 'Недостаточно металлолома для ремонта.'),
+            'resource_missing' => back()->with('error', 'Ресурс для ремонта не найден.'),
             default => back()->with('error', 'Прочность робота уже максимальна.'),
         };
     }
