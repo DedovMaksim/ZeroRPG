@@ -12,7 +12,7 @@ class ExpeditionEventApplier
 
     /**
      * Apply a configured event and return a truthful consequence for the journal.
-     * Critical events are handled separately in Sprint 17.4.
+     * Critical battery effects are applied here; the runner aborts the expedition.
      */
     public function apply(Expedition $expedition, string $key): string
     {
@@ -89,7 +89,9 @@ class ExpeditionEventApplier
                 $inventory->increment('amount', $received);
             }
 
-            return sprintf('%s +%d (найдено %d; остальное не поместилось).', $resource->name, $received, $amount);
+            return $received < $amount
+                ? sprintf('%s +%d (найдено %d; остальное не поместилось).', $resource->name, $received, $amount)
+                : sprintf('%s +%d.', $resource->name, $received);
         }
 
         if ($type === 'xp') {
