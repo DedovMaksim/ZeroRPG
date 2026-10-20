@@ -10,6 +10,9 @@ class CentralAiController extends Controller
     {
         $robot = auth()->user()->robot;
 
+        $base = $robot->base->load('buildings');
+        $robot->load('inventories');
+
         $projects = ConstructionProject::with('requirements.resource')
             ->where('base_id', $robot->base->id)
             ->get();
@@ -17,6 +20,9 @@ class CentralAiController extends Controller
         return view('central-ai', [
             'robot' => $robot,
             'projects' => $projects,
+            'base' => $base,
+            'buildings' => $base->buildings->keyBy('key'),
+            'buildingCatalog' => config('buildings', []),
         ]);
     }
 }
