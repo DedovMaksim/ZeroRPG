@@ -29,7 +29,7 @@ class DashboardController extends Controller
 
         $lastCompletedExpedition = $robot->expeditions()
             ->with(['location', 'logs'])
-            ->where('status', 'completed')
+            ->whereIn('status', ['completed', 'aborted'])
             ->latest()
             ->first();
 
