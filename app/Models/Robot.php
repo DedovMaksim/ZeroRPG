@@ -45,6 +45,11 @@ class Robot extends Model
         return app(\App\Services\RobotStatsCalculator::class);
     }
 
+    public function effects(): HasMany
+    {
+        return $this->hasMany(RobotEffect::class);
+    }
+
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
