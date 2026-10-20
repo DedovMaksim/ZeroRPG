@@ -25,16 +25,7 @@ class ExpeditionEventRunner
                 continue;
             }
 
-            $roll = random_int(1, array_sum(array_column($pool, 'weight')));
-            $key = null;
-
-            foreach ($pool as $candidate => $event) {
-                $roll -= $event['weight'];
-                if ($roll <= 0) {
-                    $key = $candidate;
-                    break;
-                }
-            }
+            $key = $this->selectEventKey($pool);
 
             if ($key === null) {
                 continue;
@@ -80,5 +71,60 @@ class ExpeditionEventRunner
         }
 
         return false;
+    }
+
+    /**
+     * First select a category, then an event within that category.
+     * Categories with no eligible events cannot consume probability.
+     */
+    public function selectEventKey(array $pool): ?string
+    {
+        $groups = [];
+        foreach ($pool as $key => $event) {
+            $weight = (int) ($event['weight'] ?? 0);
+            if ($weight <= 0) {
+                continue;
+            }
+            $category = (string) ($event['category'] ?? 'neutral');
+            $groups[$category][$key] = $event;
+        }
+
+        $categoryWeights = config('expedition_event_rules.category_weights', []);
+        $available = [];
+        foreach ($groups as $category => $events) {
+            $weight = max(0, (int) ($categoryWeights[$category] ?? 0));
+            if ($weight > 0) {
+                $available[$category] = $weight;
+            }
+        }
+
+        if ($available === []) {
+            return null;
+        }
+
+        $roll = random_int(1, array_sum($available));
+        $selectedCategory = null;
+        foreach ($available as $category => $weight) {
+            $roll -= $weight;
+            if ($roll <= 0) {
+                $selectedCategory = $category;
+                break;
+            }
+        }
+
+        if ($selectedCategory === null) {
+            return null;
+        }
+
+        $events = $groups[$selectedCategory];
+        $roll = random_int(1, array_sum(array_column($events, 'weight')));
+        foreach ($events as $key => $event) {
+            $roll -= (int) $event['weight'];
+            if ($roll <= 0) {
+                return (string) $key;
+            }
+        }
+
+        return null;
     }
 }
