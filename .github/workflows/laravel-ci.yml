@@ -46,9 +46,6 @@ jobs:
       - name: Seed SQLite database
         run: php artisan db:seed --force
 
-      - name: Run Laravel tests
-        run: php artisan test
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -60,3 +57,7 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Run Laravel tests
+        run: php artisan test
+
