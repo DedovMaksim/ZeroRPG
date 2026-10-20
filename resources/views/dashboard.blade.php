@@ -90,12 +90,12 @@
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">CPU</div>
-                                <div class="text-xl font-bold">{{ $robot->cpu }} MHz</div>
+                                <div class="text-xl font-bold">{{ $robot->stats()->cpu($robot) }} MHz</div>
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">RAM</div>
-                                <div class="text-xl font-bold">{{ $robot->ram }} KB</div>
+                                <div class="text-xl font-bold">{{ $robot->stats()->ram($robot) }} KB</div>
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">
@@ -111,14 +111,14 @@
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">SSD</div>
                                 <div class="text-2xl">
-                                    {{ $usedStorage }} / {{ $robot->maxSsd() }} MB
+                                    {{ $usedStorage }} / {{ $robot->totalStorage() }} MB
                                 </div>
 
-                                @if ($usedStorage >= $robot->maxSsd())
+                                @if ($usedStorage >= $robot->totalStorage())
                                     <div class="mt-1 text-sm text-red-600">
                                         Склад заполнен
                                     </div>
-                                @elseif ($usedStorage >= $robot->maxSsd() * 0.8)
+                                @elseif ($usedStorage >= $robot->totalStorage() * 0.8)
                                     <div class="mt-1 text-sm text-yellow-600">
                                         Почти заполнено
                                     </div>
