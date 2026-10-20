@@ -25,13 +25,15 @@ class ExpeditionController extends Controller
                 ->with('error', 'Робот уже находится в экспедиции.');
         }
 
-        if ($robot->battery < $location->battery_cost) {
+        $energyCost = max(0, (int) ceil($location->battery_cost * (100 + $robot->stats()->energyCostPercent($robot)) / 100));
+
+        if ($robot->battery < $energyCost) {
             return redirect()
                 ->route('dashboard')
                 ->with(
                     'error',
                     'Недостаточно энергии. Требуется: '
-                    . $location->battery_cost
+                    . $energyCost
                     . '%, доступно: '
                     . $robot->battery
                     . '%.'
@@ -41,7 +43,7 @@ class ExpeditionController extends Controller
         $robot->update([
             'battery' => max(
                 0,
-                $robot->battery - $location->battery_cost
+                $robot->battery - $energyCost
             ),
             'battery_updated_at' => now(),
         ]);
@@ -59,7 +61,7 @@ class ExpeditionController extends Controller
             $baseDuration * 60 * (1 - $ramReduction / 100)
         );
 
-        $durationSeconds = max(60, $durationSeconds);
+        $durationSeconds = max(60, (int) round($durationSeconds * (100 + $robot->stats()->durationPercent($robot)) / 100));
 
         $durationMinutes = (int) ceil($durationSeconds / 60);
 
