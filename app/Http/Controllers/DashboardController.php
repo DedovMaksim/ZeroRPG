@@ -16,6 +16,7 @@ class DashboardController extends Controller
         $robot = Auth::user()->robot;
 
         $processor->processCompletedExpeditions($robot);
+        $robot->refresh();
 
         $batteryProcessor->process($robot);
 
