@@ -20,7 +20,7 @@ class RobotStatsCalculator
 
     public function maxSsd(Robot $robot): int
     {
-        return $this->effects->effective($robot, 'ssd', $robot->maxSsd() + $this->equippedBonus($robot, 'ssd_bonus'));
+        return $this->effects->effective($robot, 'ssd', (int) $robot->ssd + (($this->logistics($robot) - 1) * 2) + $this->equippedBonus($robot, 'ssd_bonus'));
     }
 
     public function maxBattery(Robot $robot): int
