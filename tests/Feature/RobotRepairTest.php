@@ -23,6 +23,20 @@ class RobotRepairTest extends TestCase
         ]);
     }
 
+    private function stockScrap(User $user, int $amount = 20): void
+    {
+        $resource = \App\Models\Resource::firstOrCreate(['slug' => 'scrap_metal'], [
+            'name' => 'Металлолом',
+            'storage_size' => 1,
+            'scrap_value' => 1,
+        ]);
+
+        $user->robot->inventories()->create([
+            'resource_id' => $resource->id,
+            'amount' => $amount,
+        ]);
+    }
+
     public function test_repair_requires_active_repair_bay(): void
     {
         $user = User::factory()->create();
@@ -38,6 +52,7 @@ class RobotRepairTest extends TestCase
     {
         $user = User::factory()->create();
         $this->repairBay($user);
+        $this->stockScrap($user);
         $user->robot->update(['integrity' => 60]);
 
         $this->actingAs($user)->post(route('robot.repair'))
@@ -50,6 +65,7 @@ class RobotRepairTest extends TestCase
     {
         $user = User::factory()->create();
         $this->repairBay($user);
+        $this->stockScrap($user);
         $user->robot->update(['integrity' => 98]);
 
         $this->actingAs($user)->post(route('robot.repair'))
@@ -66,6 +82,7 @@ class RobotRepairTest extends TestCase
     {
         $user = User::factory()->create();
         $this->repairBay($user);
+        $this->stockScrap($user);
         $user->robot->update(['level' => 3, 'integrity' => 105]);
 
         $this->actingAs($user)->post(route('robot.repair'))
@@ -78,6 +95,7 @@ class RobotRepairTest extends TestCase
     {
         $user = User::factory()->create();
         $this->repairBay($user);
+        $this->stockScrap($user);
         $user->robot->update(['integrity' => 50]);
 
         $location = Location::create([
@@ -107,6 +125,7 @@ class RobotRepairTest extends TestCase
         $owner = User::factory()->create();
         $other = User::factory()->create();
         $this->repairBay($owner);
+        $this->stockScrap($owner);
         $owner->robot->update(['integrity' => 40]);
         $other->robot->update(['integrity' => 30]);
 
