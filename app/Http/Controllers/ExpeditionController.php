@@ -48,7 +48,7 @@ class ExpeditionController extends Controller
 
         $baseDuration = 3 + ($location->difficulty * 2);
 
-        $ramTier = log($robot->ram / 4, 2);
+        $ramTier = log(max(1, $robot->stats()->ram($robot)) / 4, 2);
 
         $ramReduction = min(
             50,
