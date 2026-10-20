@@ -23,13 +23,13 @@ class DashboardController extends Controller
         $robot->refresh();
 
         $activeExpedition = $robot->expeditions()
-            ->with(['location', 'logs'])
+            ->with(['location', 'logs' => fn ($q) => $q->orderBy('event_time')->orderBy('id')])
             ->where('status', 'in_progress')
             ->latest()
             ->first();
 
         $lastCompletedExpedition = $robot->expeditions()
-            ->with(['location', 'logs'])
+            ->with(['location', 'logs' => fn ($q) => $q->orderBy('event_time')->orderBy('id')])
             ->whereIn('status', ['completed', 'aborted'])
             ->latest()
             ->first();
