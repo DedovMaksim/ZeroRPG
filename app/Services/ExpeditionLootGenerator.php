@@ -18,7 +18,7 @@ class ExpeditionLootGenerator
 
         foreach ($lootTable as $lootItem) {
             if (rand(1, 100) <= $lootItem['chance']) {
-                $cpuBonus = min(5, floor($expedition->robot->cpu / 10));
+                $cpuBonus = $expedition->robot->stats()->lootBonus($expedition->robot);
 
                 $generatedLoot[] = [
                     'resource' => $lootItem['resource'],
@@ -30,7 +30,7 @@ class ExpeditionLootGenerator
         if (empty($generatedLoot)) {
             $guaranteedItem = $lootTable[array_rand($lootTable)];
 
-            $cpuBonus = min(5, floor($expedition->robot->cpu / 10));
+            $cpuBonus = $expedition->robot->stats()->lootBonus($expedition->robot);
 
             $generatedLoot[] = [
                 'resource' => $guaranteedItem['resource'],
@@ -48,7 +48,7 @@ class ExpeditionLootGenerator
                     * $inventoryItem->resource->storage_size;
             });
 
-        $freeStorage = $robot->maxSsd() - $usedStorage;
+        $freeStorage = $robot->totalStorage() - $usedStorage;
 
         foreach ($generatedLoot as $item) {
             $resource = Resource::where('name', $item['resource'])->first();
