@@ -6,11 +6,14 @@ use App\Models\Expedition;
 use App\Models\ExpeditionLog;
 use App\Models\ExpeditionReport;
 use App\Models\Robot;
+use Illuminate\Support\Facades\DB;
 
 class ExpeditionProcessor
 {
     public function __construct(
-        private ExpeditionLootGenerator $lootGenerator
+        private ExpeditionLootGenerator $lootGenerator,
+        private ExpeditionEventApplier $eventApplier,
+        private ExpeditionEventCatalog $eventCatalog
     ) {}
 
     public function processCompletedExpeditions(Robot $robot): void
@@ -21,26 +24,32 @@ class ExpeditionProcessor
             ->get();
 
         foreach ($expeditions as $expedition) {
-            $this->writeBatteryCostLog($expedition);
-            $this->writeRandomEventLog($expedition);
+            DB::transaction(function () use ($expedition, $robot): void {
+                $locked = Expedition::whereKey($expedition->id)->lockForUpdate()->firstOrFail();
 
-            $loot = $this->lootGenerator->generate($expedition);
+                if ($locked->status !== 'in_progress') {
+                    return;
+                }
 
-            $xp = $this->giveExperience($robot, $expedition);
+                $currentRobot = Robot::whereKey($robot->id)->lockForUpdate()->firstOrFail();
+                $this->writeBatteryCostLog($locked);
+                $this->applyRandomEvent($locked);
 
-            ExpeditionReport::create([
-                'robot_id' => $robot->id,
-                'location_id' => $expedition->location_id,
-                'location_name' => $expedition->location->name,
-                'resources' => $loot,
-                'xp_gained' => $xp,
-                'started_at' => $expedition->started_at,
-                'finished_at' => $expedition->finished_at,
-            ]);
+                $loot = $this->lootGenerator->generate($locked);
+                $xp = $this->giveExperience($currentRobot, $locked);
 
-            $expedition->update([
-                'status' => 'completed',
-            ]);
+                ExpeditionReport::create([
+                    'robot_id' => $currentRobot->id,
+                    'location_id' => $locked->location_id,
+                    'location_name' => $locked->location->name,
+                    'resources' => $loot,
+                    'xp_gained' => $xp,
+                    'started_at' => $locked->started_at,
+                    'finished_at' => $locked->finished_at,
+                ]);
+
+                $locked->update(['status' => 'completed']);
+            });
         }
     }
 
@@ -127,17 +136,53 @@ class ExpeditionProcessor
         ]);
     }
 
-    private function writeRandomEventLog(Expedition $expedition): void
+    private function applyRandomEvent(Expedition $expedition): void
     {
-        if (rand(1, 100) > 25) {
+        $difficulty = (int) $expedition->location->difficulty;
+
+        if (random_int(1, 100) > $this->eventCatalog->triggerChance($difficulty)) {
             return;
         }
+
+        $eligible = $this->eventCatalog->eligible($expedition->location->slug, $difficulty);
+        $eligible = array_filter(
+            $eligible,
+            fn (array $event) => ($event['effect']['type'] ?? null) !== 'critical_battery'
+        );
+
+        if ($eligible === []) {
+            return;
+        }
+
+        $totalWeight = array_sum(array_column($eligible, 'weight'));
+        $roll = random_int(1, $totalWeight);
+        $selectedKey = null;
+
+        foreach ($eligible as $key => $event) {
+            $roll -= (int) $event['weight'];
+
+            if ($roll <= 0) {
+                $selectedKey = $key;
+                break;
+            }
+        }
+
+        if ($selectedKey === null) {
+            return;
+        }
+
+        $variants = config('expedition_event_texts.'.$selectedKey, []);
+        $description = $variants !== []
+            ? $variants[array_rand($variants)]
+            : config('expedition_events.'.$selectedKey.'.message');
+
+        $consequence = $this->eventApplier->apply($expedition, $selectedKey);
 
         ExpeditionLog::create([
             'expedition_id' => $expedition->id,
             'minute' => $expedition->duration_minutes,
             'event_type' => 'random_event',
-            'message' => 'Стая бродячих роботов заметила Zero. Робот ушёл от преследования.',
+            'message' => $description.' '.$consequence,
             'event_time' => $expedition->finished_at,
         ]);
     }
