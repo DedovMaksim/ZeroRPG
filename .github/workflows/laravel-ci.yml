@@ -1,0 +1,61 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  laravel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, dom, xml
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Configure Laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan optimize:clear
+
+      - name: Check PHP syntax
+        run: find app database routes -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Migrate SQLite database
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan migrate --force
+
+      - name: Seed SQLite database
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan db:seed --force
+
+      - name: Run Laravel tests
+        run: php artisan test
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
