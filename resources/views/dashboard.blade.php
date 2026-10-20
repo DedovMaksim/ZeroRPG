@@ -100,12 +100,12 @@
 
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">Battery</div>
-                                <div class="text-xl font-bold">{{ $robot->battery }} / {{ $robot->maxBattery() }}%</div>
+                                <div class="text-xl font-bold">{{ $robot->battery }} / {{ $robot->stats()->maxBattery($robot) }}%</div>
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">Integrity</div>
-                                <div class="text-xl font-bold">{{ $robot->integrity }}%</div>
+                                <div class="text-xl font-bold">{{ $robot->integrity }} / {{ $robot->stats()->maxIntegrity($robot) }}</div>
                             </div>
 
                             <div class="p-4 bg-gray-100 rounded-lg">
@@ -405,7 +405,7 @@
                                         </div>
 
                                         <div class="text-sm text-gray-600">
-                                            Уровень {{ $robot->logistics_level }}
+                                            Уровень {{ $robot->stats()->logistics($robot) }}
                                         </div>
                                     </div>
 
