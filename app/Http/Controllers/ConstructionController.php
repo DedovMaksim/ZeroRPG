@@ -67,6 +67,14 @@ class ConstructionController extends Controller
             if ($project->isCompleted()) {
                 $project->update(['status' => 'completed']);
 
+                $buildingDefinition = config("buildings.{$project->key}");
+                if (is_array($buildingDefinition)) {
+                    $project->base->buildings()->firstOrCreate(
+                        ['key' => $project->key],
+                        $buildingDefinition['building']
+                    );
+                }
+
                 if ($project->key === 'warehouse_upgrade_2') {
                     $warehouse = $project->base->buildings()->where('key', 'warehouse')->lockForUpdate()->firstOrFail();
                     if ($warehouse->level === 1) {
