@@ -10,6 +10,12 @@ on:
 jobs:
   laravel:
     runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/database.sqlite
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,21 +36,14 @@ jobs:
           mkdir -p database
           touch database/database.sqlite
           php artisan key:generate
-          php artisan optimize:clear
 
       - name: Check PHP syntax
         run: find app database routes -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Migrate SQLite database
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
         run: php artisan migrate --force
 
       - name: Seed SQLite database
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
         run: php artisan db:seed --force
 
       - name: Run Laravel tests
