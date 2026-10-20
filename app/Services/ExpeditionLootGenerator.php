@@ -83,7 +83,7 @@ class ExpeditionLootGenerator
             }
 
             if ($requiredStorage > $freeStorage) {
-                $canTake = floor($freeStorage / $resource->storage_size);
+                $canTake = intdiv((int) $freeStorage, (int) $resource->storage_size);
 
                 if ($canTake <= 0) {
                     ExpeditionLog::create([
