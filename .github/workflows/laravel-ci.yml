@@ -17,7 +17,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, pdo_sqlite, sqlite3, dom, xml
           coverage: none
 
@@ -27,6 +27,8 @@ jobs:
       - name: Configure Laravel
         run: |
           cp .env.example .env
+          mkdir -p database
+          touch database/database.sqlite
           php artisan key:generate
           php artisan optimize:clear
 
@@ -36,13 +38,13 @@ jobs:
       - name: Migrate SQLite database
         env:
           DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
+          DB_DATABASE: database/database.sqlite
         run: php artisan migrate --force
 
       - name: Seed SQLite database
         env:
           DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
+          DB_DATABASE: database/database.sqlite
         run: php artisan db:seed --force
 
       - name: Run Laravel tests
