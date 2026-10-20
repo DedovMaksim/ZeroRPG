@@ -87,6 +87,28 @@
 
                     </div>
 
+                        @php
+                            $activeEffects = $robot->effects()
+                                ->where('expires_at', '>', now())
+                                ->orderBy('expires_at')
+                                ->get();
+                        @endphp
+
+                        @if ($activeEffects->isNotEmpty())
+                            <div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                <h4 class="font-semibold text-amber-900 mb-2">Активные эффекты</h4>
+                                <ul class="space-y-1 text-sm text-amber-900">
+                                    @foreach ($activeEffects as $effect)
+                                        <li>
+                                            {{ strtoupper($effect->stat) }}
+                                            {{ $effect->modifier > 0 ? '+' : '' }}{{ $effect->modifier }}
+                                            · до {{ $effect->expires_at->format('H:i') }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div class="p-4 bg-gray-100 rounded-lg">
                                 <div class="text-sm text-gray-500">CPU</div>
