@@ -12,8 +12,6 @@ class ExpeditionProcessor
 {
     public function __construct(
         private ExpeditionLootGenerator $lootGenerator,
-        private ExpeditionEventApplier $eventApplier,
-        private ExpeditionEventCatalog $eventCatalog,
         private ExpeditionEventRunner $eventRunner
     ) {}
 
@@ -33,15 +31,16 @@ class ExpeditionProcessor
                 }
 
                 $currentRobot = Robot::whereKey($robot->id)->lockForUpdate()->firstOrFail();
-                $this->writeBatteryCostLog($locked);
                 $critical = $this->eventRunner->run($locked);
                 $currentRobot->refresh();
 
                 if ($critical) {
+                    $this->writeBatteryCostLog($locked);
                     $locked->update(['status' => 'aborted']);
                     return;
                 }
 
+                $this->writeBatteryCostLog($locked);
                 $loot = $this->lootGenerator->generate($locked);
                 $xp = $this->giveExperience($currentRobot, $locked);
 
@@ -53,6 +52,14 @@ class ExpeditionProcessor
                     'xp_gained' => $xp,
                     'started_at' => $locked->started_at,
                     'finished_at' => $locked->finished_at,
+                ]);
+
+                ExpeditionLog::create([
+                    'expedition_id' => $locked->id,
+                    'minute' => $locked->duration_minutes,
+                    'event_type' => 'finish',
+                    'message' => 'Экспедиция завершена. Zero вернулся на базу.',
+                    'event_time' => $locked->finished_at,
                 ]);
 
                 $locked->update(['status' => 'completed']);
