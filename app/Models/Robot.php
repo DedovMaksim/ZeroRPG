@@ -70,6 +70,11 @@ class Robot extends Model
         );
     }
 
+    public function maxIntegrity(): int
+    {
+        return 100 + (($this->level - 1) * 5);
+    }
+
     public function maxBattery(): int
     {
         return 100 + (($this->level - 1) * 5);
