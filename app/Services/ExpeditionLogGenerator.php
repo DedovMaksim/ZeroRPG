@@ -31,8 +31,7 @@ class ExpeditionLogGenerator
             [1, 'travel', 'Робот покинул базу'],
             [2, 'travel', 'Робот прибыл в локацию'],
             [3, 'search', $searchEvents[array_rand($searchEvents)]],
-            [4, 'loot', $lootEvents[array_rand($lootEvents)]],
-            [5, 'finish', 'Экспедиция завершена'],
+            [4, 'search', 'Сканирование территории завершено. Ожидание результатов анализа.'],
         ];
 
         $duration = max(1, (int) $expedition->started_at->diffInSeconds($expedition->finished_at));
