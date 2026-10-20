@@ -9,6 +9,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\CentralAiController;
 use App\Http\Controllers\ConstructionController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\RobotItemController;
 
 Route::view('/', 'welcome');
 
@@ -59,5 +60,11 @@ Route::post('/warehouse/deposit/{inventory}', [WarehouseController::class, 'depo
 Route::post('/warehouse/withdraw/{warehouseInventory}', [WarehouseController::class, 'withdraw'])
     ->middleware(['auth', 'verified'])
     ->name('warehouse.withdraw');    
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/items/{item}/buy', [RobotItemController::class, 'buy'])->name('items.buy');
+    Route::post('/robot-items/{robotItem}/equip', [RobotItemController::class, 'equip'])->name('robot-items.equip');
+    Route::post('/robot-items/{robotItem}/unequip', [RobotItemController::class, 'unequip'])->name('robot-items.unequip');
+});
 
 require __DIR__.'/auth.php';
