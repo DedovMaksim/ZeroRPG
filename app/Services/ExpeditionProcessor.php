@@ -122,7 +122,7 @@ class ExpeditionProcessor
             'minute' => $expedition->duration_minutes,
             'event_type' => 'battery_cost',
             'message' => 'Потрачено энергии на маршрут: Battery -' .
-                $expedition->location->battery_cost . '%',
+                ($expedition->battery_cost_paid ?? $expedition->location->battery_cost) . '%',
             'event_time' => $expedition->finished_at,
         ]);
     }
@@ -137,7 +137,7 @@ class ExpeditionProcessor
             'expedition_id' => $expedition->id,
             'minute' => $expedition->duration_minutes,
             'event_type' => 'random_event',
-            'message' => 'Стая бродячих роботов заметила Zero. Пришлось удирать. Battery -5%',
+            'message' => 'Стая бродячих роботов заметила Zero. Робот ушёл от преследования.',
             'event_time' => $expedition->finished_at,
         ]);
     }
