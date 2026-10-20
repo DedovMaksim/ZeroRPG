@@ -199,7 +199,7 @@
                         <div class="bg-white shadow-sm sm:rounded-lg p-6 border border-white">
 
                             <h4 class="text-lg font-bold mb-4">
-                                Результат экспедиции
+                                {{ $lastCompletedExpedition->status === 'aborted' ? 'Аварийное возвращение' : 'Результат экспедиции' }}
                             </h4>
 
                             <div class="grid grid-cols-2 gap-4 text-sm mb-6">
@@ -214,7 +214,7 @@
                                 <div>
                                     <div class="text-gray-500">Статус</div>
                                     <div class="font-semibold">
-                                        завершена
+                                        {{ $lastCompletedExpedition->status === 'aborted' ? 'прервана' : 'завершена' }}
                                     </div>
                                 </div>
 
