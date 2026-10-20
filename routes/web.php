@@ -11,6 +11,7 @@ use App\Http\Controllers\ConstructionController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\RobotItemController;
 use App\Http\Controllers\WarehouseUpgradeController;
+use App\Http\Controllers\BuildingConstructionController;
 
 Route::view('/', 'welcome');
 
@@ -71,5 +72,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/warehouse/upgrade', [WarehouseUpgradeController::class, 'store'])
     ->middleware(['auth', 'verified'])
     ->name('warehouse.upgrade');
+
+Route::post('/buildings/{key}/construct', [BuildingConstructionController::class, 'store'])
+    ->middleware(['auth', 'verified'])
+    ->name('buildings.construct');
 
 require __DIR__.'/auth.php';
