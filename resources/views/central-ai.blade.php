@@ -109,7 +109,7 @@
                                     <p class="text-gray-600 mt-2">Уровень {{ $building->level }} · {{ $building->status === 'active' ? 'Активен' : $building->status }}</p>
                                     @if ($key === 'repair_bay' && $building->status === 'active')
                                         @php
-                                            $maxIntegrity = $robot->maxIntegrity();
+                                            $maxIntegrity = $robot->stats()->maxIntegrity($robot);
                                             $currentIntegrity = $robot->integrity;
                                             $integrityPercent = $maxIntegrity > 0 ? min(100, max(0, round($currentIntegrity / $maxIntegrity * 100))) : 0;
                                             $repairConfigured = $repairCost > 0 && $repairRecovery > 0;
