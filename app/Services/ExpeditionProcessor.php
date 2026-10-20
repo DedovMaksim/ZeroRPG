@@ -33,8 +33,13 @@ class ExpeditionProcessor
 
                 $currentRobot = Robot::whereKey($robot->id)->lockForUpdate()->firstOrFail();
                 $this->writeBatteryCostLog($locked);
-                $this->applyRandomEvent($locked);
+                $critical = $this->applyRandomEvent($locked);
                 $currentRobot->refresh();
+
+                if ($critical) {
+                    $locked->update(['status' => 'aborted']);
+                    return;
+                }
 
                 $loot = $this->lootGenerator->generate($locked);
                 $xp = $this->giveExperience($currentRobot, $locked);
@@ -137,22 +142,17 @@ class ExpeditionProcessor
         ]);
     }
 
-    private function applyRandomEvent(Expedition $expedition): void
+    private function applyRandomEvent(Expedition $expedition): bool
     {
         $difficulty = (int) $expedition->location->difficulty;
 
         if (random_int(1, 100) > $this->eventCatalog->triggerChance($difficulty)) {
-            return;
+            return false;
         }
 
         $eligible = $this->eventCatalog->eligible($expedition->location->slug, $difficulty);
-        $eligible = array_filter(
-            $eligible,
-            fn (array $event) => ($event['effect']['type'] ?? null) !== 'critical_battery'
-        );
-
         if ($eligible === []) {
-            return;
+            return false;
         }
 
         $totalWeight = array_sum(array_column($eligible, 'weight'));
@@ -169,7 +169,7 @@ class ExpeditionProcessor
         }
 
         if ($selectedKey === null) {
-            return;
+            return false;
         }
 
         $variants = config('expedition_event_texts.'.$selectedKey, []);
@@ -182,9 +182,11 @@ class ExpeditionProcessor
         ExpeditionLog::create([
             'expedition_id' => $expedition->id,
             'minute' => $expedition->duration_minutes,
-            'event_type' => 'random_event',
+            'event_type' => ($eligible[$selectedKey]['effect']['type'] ?? '') === 'critical_battery' ? 'critical_event' : 'random_event',
             'message' => $description.' '.$consequence,
             'event_time' => $expedition->finished_at,
         ]);
+
+        return ($eligible[$selectedKey]['effect']['type'] ?? '') === 'critical_battery';
     }
 }
