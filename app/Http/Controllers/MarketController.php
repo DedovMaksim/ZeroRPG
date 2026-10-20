@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,6 +21,7 @@ class MarketController extends Controller
         return view('market.index', [
             'robot' => $robot,
             'inventory' => $inventory,
+            'items' => Item::orderBy('price')->get(),
         ]);
     }
 
