@@ -34,6 +34,7 @@ class ExpeditionProcessor
                 $currentRobot = Robot::whereKey($robot->id)->lockForUpdate()->firstOrFail();
                 $this->writeBatteryCostLog($locked);
                 $this->applyRandomEvent($locked);
+                $currentRobot->refresh();
 
                 $loot = $this->lootGenerator->generate($locked);
                 $xp = $this->giveExperience($currentRobot, $locked);
