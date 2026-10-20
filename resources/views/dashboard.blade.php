@@ -296,18 +296,18 @@
                 </div>
 
                 {{-- Доступные локации и действия базы --}}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 gap-6">
 
                     {{-- Локации --}}
-                    <div class="w-full md:w-3/5 bg-white shadow-sm sm:rounded-lg p-6">
+                    <div class="min-w-0 bg-white shadow-sm sm:rounded-lg p-6">
 
                         <h4 class="text-lg font-bold mb-4">
                             Доступные локации
                         </h4>
 
-                        <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                             @foreach ($locations as $location)
-                                <div class="border rounded-lg p-4">
+                                <div class="border rounded-lg p-4 flex flex-col min-w-0">
 
                                     <h5 class="font-bold text-lg mb-2">
                                         {{ $location->name }}
@@ -317,7 +317,7 @@
                                         {{ $location->description }}
                                     </p>
 
-                                    <div class="text-sm text-gray-500 mb-4">
+                                    <div class="text-sm text-gray-500 mb-4 mt-auto">
                                         <div>Сложность: {{ $location->difficulty }}</div>
                                         <div>Расход батареи: {{ max(0, (int) ceil($location->battery_cost * (100 + $robot->stats()->energyCostPercent($robot)) / 100)) }}%</div>
                                     </div>
@@ -327,7 +327,7 @@
 
                                         <button
                                             type="submit"
-                                            class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700"
+                                            class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700"
                                         >
                                             Отправить в экспедицию
                                         </button>
@@ -340,13 +340,13 @@
                     </div>
 
                     {{-- Панель базы --}}
-                    <div class="w-full md:w-2/5 bg-white shadow-sm sm:rounded-lg p-6">
+                    <div class="min-w-0 bg-white shadow-sm sm:rounded-lg p-6">
 
                         <h4 class="text-lg font-bold mb-4">
                             База
                         </h4>
 
-                        <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
                             <a href="{{ route('market.index') }}"
                             class="block border border-amber-300 bg-amber-50 rounded-lg p-4 hover:bg-amber-100 transition">
