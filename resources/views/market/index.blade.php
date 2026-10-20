@@ -115,14 +115,38 @@
                         @endif
                     </div>
 
-                    <div class="border rounded-lg p-6 opacity-50">
-                        <h4 class="font-bold text-lg mb-2">
-                            Магазин
-                        </h4>
+                    <div class="border rounded-lg p-6">
+                        <h4 class="font-bold text-lg mb-2">Магазин модулей</h4>
+                        <p class="text-gray-600 mb-4">Улучшайте робота за скрапы.</p>
 
-                        <p class="text-gray-600">
-                            Скоро здесь появятся модули, броня, оружие и улучшения.
-                        </p>
+                        <div class="space-y-4">
+                            @forelse ($items as $module)
+                                <div class="border rounded-lg p-4">
+                                    <div class="font-bold">{{ $module->name }}</div>
+                                    <p class="text-sm text-gray-600 mt-1">{{ $module->description }}</p>
+                                    @if (count($module->bonuses()))
+                                        <p class="text-sm text-emerald-700 mt-2">
+                                            @foreach ($module->bonuses() as $stat => $bonus)
+                                                {{ $stat }}: {{ $bonus > 0 ? '+' : '' }}{{ $bonus }}{{ !$loop->last ? ' · ' : '' }}
+                                            @endforeach
+                                        </p>
+                                    @endif
+                                    <div class="flex items-center justify-between gap-3 mt-3">
+                                        <span class="font-semibold">{{ $module->price }} скрапов</span>
+                                        <form method="POST" action="{{ route('items.buy', $module) }}">
+                                            @csrf
+                                            <button type="submit"
+                                                @disabled($robot->scraps < $module->price)
+                                                class="px-4 py-2 rounded-lg text-white bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                Купить
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-500">Модули пока недоступны.</p>
+                            @endforelse
+                        </div>
                     </div>
 
                 </div>
