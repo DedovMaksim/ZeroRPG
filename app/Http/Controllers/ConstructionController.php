@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ConstructionRequirement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ConstructionController extends Controller
 {
@@ -15,56 +16,77 @@ class ConstructionController extends Controller
 
         $robot = auth()->user()->robot;
 
-        $inventory = $robot->inventories()
-            ->where('resource_id', $requirement->resource_id)
-            ->first();
-
-        if (! $inventory) {
-            return back()->with('error', 'У робота нет этого ресурса.');
-        }
-
-        $remainingAmount = $requirement->remainingAmount();
-
-        $amount = min(
-            $data['amount'],
-            $inventory->amount,
-            $remainingAmount
+        abort_unless(
+            $requirement->project()->where('base_id', $robot->base->id)->exists(),
+            403
         );
 
-        if ($amount <= 0) {
-            return back()->with('error', 'Этот ресурс больше не требуется.');
-        }
+        $result = DB::transaction(function () use ($robot, $requirement, $data): string {
+            $project = $requirement->project()->lockForUpdate()->firstOrFail();
 
-        $inventory->decrement('amount', $amount);
-
-        if ($inventory->fresh()->amount <= 0) {
-            $inventory->delete();
-        }
-
-        $requirement->increment('delivered_amount', $amount);
-
-        $project = $requirement->project()->with('requirements')->first();
-
-        if ($project->isCompleted()) {
-            $project->update([
-                'status' => 'completed',
-            ]);
-
-            if ($project->key === 'warehouse') {
-                $project->base->buildings()->firstOrCreate(
-                    [
-                        'key' => 'warehouse',
-                    ],
-                    [
-                        'name' => 'Склад',
-                        'level' => 1,
-                        'status' => 'active',
-                        'capacity' => 40,
-                    ]
-                );
+            if ($project->status === 'completed') {
+                return 'completed';
             }
-        }
 
-        return back()->with('success', 'Ресурсы переданы в строительство.');
+            $lockedRequirement = $project->requirements()
+                ->whereKey($requirement->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $remaining = $lockedRequirement->remainingAmount();
+
+            if ($remaining <= 0) {
+                return 'completed';
+            }
+
+            $inventory = $robot->inventories()
+                ->where('resource_id', $lockedRequirement->resource_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $inventory || $inventory->amount <= 0) {
+                return 'missing';
+            }
+
+            $amount = min((int) $data['amount'], (int) $inventory->amount, $remaining);
+
+            if ($amount <= 0) {
+                return 'completed';
+            }
+
+            if ($inventory->amount === $amount) {
+                $inventory->delete();
+            } else {
+                $inventory->decrement('amount', $amount);
+            }
+
+            $lockedRequirement->increment('delivered_amount', $amount);
+
+            $project->load('requirements');
+
+            if ($project->isCompleted()) {
+                $project->update(['status' => 'completed']);
+
+                if ($project->key === 'warehouse') {
+                    $project->base->buildings()->firstOrCreate(
+                        ['key' => 'warehouse'],
+                        [
+                            'name' => 'Склад',
+                            'level' => 1,
+                            'status' => 'active',
+                            'capacity' => 40,
+                        ]
+                    );
+                }
+            }
+
+            return 'success';
+        });
+
+        return match ($result) {
+            'missing' => back()->with('error', 'У робота нет этого ресурса.'),
+            'completed' => back()->with('error', 'Этот ресурс больше не требуется.'),
+            default => back()->with('success', 'Ресурсы переданы в строительство.'),
+        };
     }
 }
