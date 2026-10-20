@@ -29,7 +29,7 @@ class ExpeditionBalanceSimulatorTest extends TestCase
 
         $this->assertSame(0.0, $result['events_per_run']);
         $this->assertSame(0.0, $result['abort_percent']);
-        $this->assertSame(4.0, $result['xp_per_run'], 0.5);
+        $this->assertEqualsWithDelta(4.0, $result['xp_per_run'], 0.5);
     }
 
     public function test_command_runs_for_selected_location(): void
