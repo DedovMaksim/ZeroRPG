@@ -142,11 +142,11 @@ class ExpeditionProcessor
     {
         ExpeditionLog::create([
             'expedition_id' => $expedition->id,
-            'minute' => $expedition->duration_minutes,
+            'minute' => 0,
             'event_type' => 'battery_cost',
             'message' => 'Потрачено энергии на маршрут: Battery -' .
                 ($expedition->battery_cost_paid ?? $expedition->location->battery_cost) . '%',
-            'event_time' => $expedition->finished_at,
+            'event_time' => $expedition->started_at,
         ]);
     }
 
