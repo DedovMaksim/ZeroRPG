@@ -35,6 +35,16 @@ class Robot extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function robotItems(): HasMany
+    {
+        return $this->hasMany(RobotItem::class);
+    }
+
+    public function stats(): \App\Services\RobotStatsCalculator
+    {
+        return app(\App\Services\RobotStatsCalculator::class);
+    }
+
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
