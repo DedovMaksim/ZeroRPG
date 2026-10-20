@@ -33,15 +33,51 @@
                             Экипировка
                         </h4>
 
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div class="border rounded-lg p-3">Голова<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Корпус<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Оружие<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Транспорт<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Модуль CPU<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Модуль RAM<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Модуль SSD<br><span class="text-gray-500">Пусто</span></div>
-                            <div class="border rounded-lg p-3">Аккумулятор<br><span class="text-gray-500">Пусто</span></div>
+                        @php
+                            $modules = $robot->robotItems()->with('item')->get();
+                            $slots = [
+                                'cpu_module' => 'Модуль CPU',
+                                'ram_module' => 'Модуль RAM',
+                                'ssd_module' => 'Модуль SSD',
+                            ];
+                        @endphp
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            @foreach ($slots as $type => $label)
+                                @php
+                                    $equipped = $modules->first(fn ($module) => $module->equipped && $module->item->type === $type);
+                                @endphp
+                                <div class="border rounded-lg p-3">
+                                    <div class="font-semibold">{{ $label }}</div>
+                                    @if ($equipped)
+                                        <div class="mt-1">{{ $equipped->item->name }}</div>
+                                        <form method="POST" action="{{ route('robot-items.unequip', $equipped) }}" class="mt-2">
+                                            @csrf
+                                            <button type="submit" class="text-amber-700 underline">Снять</button>
+                                        </form>
+                                    @else
+                                        <span class="text-gray-500">Пусто</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <h5 class="font-semibold mt-6 mb-3">Мои модули</h5>
+                        <div class="space-y-3">
+                            @forelse ($modules->where('equipped', false) as $module)
+                                <div class="border rounded-lg p-3 flex items-center justify-between gap-3 text-sm">
+                                    <div>
+                                        <div class="font-medium">{{ $module->item->name }}</div>
+                                        <div class="text-gray-500">{{ $module->item->description }}</div>
+                                    </div>
+                                    <form method="POST" action="{{ route('robot-items.equip', $module) }}">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-2 bg-gray-900 text-white rounded-lg">Установить</button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500">Нет свободных модулей. Их можно купить в магазине.</p>
+                            @endforelse
                         </div>
                     </div>
 
