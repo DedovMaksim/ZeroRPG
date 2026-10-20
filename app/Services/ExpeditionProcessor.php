@@ -13,7 +13,8 @@ class ExpeditionProcessor
     public function __construct(
         private ExpeditionLootGenerator $lootGenerator,
         private ExpeditionEventApplier $eventApplier,
-        private ExpeditionEventCatalog $eventCatalog
+        private ExpeditionEventCatalog $eventCatalog,
+        private ExpeditionEventRunner $eventRunner
     ) {}
 
     public function processCompletedExpeditions(Robot $robot): void
@@ -33,7 +34,7 @@ class ExpeditionProcessor
 
                 $currentRobot = Robot::whereKey($robot->id)->lockForUpdate()->firstOrFail();
                 $this->writeBatteryCostLog($locked);
-                $critical = $this->applyRandomEvent($locked);
+                $critical = $this->eventRunner->run($locked);
                 $currentRobot->refresh();
 
                 if ($critical) {
