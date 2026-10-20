@@ -31,7 +31,9 @@ class ExpeditionEventApplier
         }
 
         if ($type === 'critical_battery') {
-            throw new InvalidArgumentException('Critical events require the return-to-base processor.');
+            $robot->update(['battery' => 0, 'battery_updated_at' => now()]);
+
+            return 'Battery 0. Аварийное возвращение на базу.';
         }
 
         if ($type === 'temporary_stat') {
