@@ -30,6 +30,29 @@
                     </div>
                 @endif
 
+                @php
+                    $warehouse = $robot->base->buildings()->where('key', 'warehouse')->first();
+                    $upgradeExists = $projects->contains('key', 'warehouse_upgrade_2');
+                @endphp
+
+                @if ($warehouse && $warehouse->status === 'active')
+                    <div class="border rounded-xl p-5 mb-6">
+                        <h4 class="text-xl font-semibold">Склад — уровень {{ $warehouse->level }}</h4>
+                        <p class="text-gray-600 mt-1">Вместимость: {{ $warehouse->usedStorage() }} / {{ $warehouse->capacity }}</p>
+                        @if ($warehouse->level === 1 && ! $upgradeExists)
+                            <p class="text-sm text-gray-600 mt-3">Расширение до 80: металлолом ×20, медь ×8, электроника ×2.</p>
+                            <form method="POST" action="{{ route('warehouse.upgrade') }}" class="mt-3">
+                                @csrf
+                                <button type="submit" class="px-4 py-2 bg-zinc-800 text-white rounded-lg">Начать расширение склада</button>
+                            </form>
+                        @elseif ($warehouse->level === 1)
+                            <p class="text-sm text-amber-700 mt-3">Проект расширения уже создан.</p>
+                        @else
+                            <p class="text-sm text-green-700 mt-3">Склад расширен.</p>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="space-y-6">
                     @forelse ($projects as $project)
                         <div class="border rounded-xl p-5">
