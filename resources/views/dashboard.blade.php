@@ -236,7 +236,7 @@
 
                             <div class="mb-4">
                                 <strong>Потерял:</strong>
-                                Battery -{{ $lastCompletedExpedition->location->battery_cost }}%
+                                Battery -{{ $lastCompletedExpedition->battery_cost_paid ?? $lastCompletedExpedition->location->battery_cost }}%
                             </div>
 
                             <h5 class="font-bold mb-2">
@@ -297,7 +297,7 @@
 
                                     <div class="text-sm text-gray-500 mb-4">
                                         <div>Сложность: {{ $location->difficulty }}</div>
-                                        <div>Расход батареи: {{ $location->battery_cost }}%</div>
+                                        <div>Расход батареи: {{ max(0, (int) ceil($location->battery_cost * (100 + $robot->stats()->energyCostPercent($robot)) / 100)) }}%</div>
                                     </div>
 
                                     <form method="POST" action="{{ route('expeditions.start', $location) }}">
