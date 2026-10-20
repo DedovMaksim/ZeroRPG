@@ -53,6 +53,27 @@
                     </div>
                 @endif
 
+                @if ($warehouse && $warehouse->status === 'active')
+                    @php
+                        $repairBay = $robot->base->buildings()->where('key', 'repair_bay')->first();
+                        $repairProject = $projects->contains('key', 'repair_bay');
+                    @endphp
+                    <div class="border rounded-xl p-5 mb-6">
+                        <h4 class="text-xl font-semibold">Ремонтный отсек</h4>
+                        @if ($repairBay)
+                            <p class="text-green-700 mt-2">Построен. Функция ремонта появится в следующем этапе.</p>
+                        @elseif ($repairProject)
+                            <p class="text-amber-700 mt-2">Строительство начато. Передавайте материалы в проект ниже.</p>
+                        @else
+                            <p class="text-gray-600 mt-2">Требуется: металлолом ×15, медь ×5, электроника ×2.</p>
+                            <form method="POST" action="{{ route('buildings.construct', 'repair_bay') }}" class="mt-3">
+                                @csrf
+                                <button type="submit" class="px-4 py-2 bg-zinc-800 text-white rounded-lg">Начать строительство</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="space-y-6">
                     @forelse ($projects as $project)
                         <div class="border rounded-xl p-5">
