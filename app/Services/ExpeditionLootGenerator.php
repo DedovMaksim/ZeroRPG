@@ -22,7 +22,7 @@ class ExpeditionLootGenerator
 
                 $generatedLoot[] = [
                     'resource' => $lootItem['resource'],
-                    'amount' => rand($lootItem['min'], $lootItem['max']) + $cpuBonus,
+                    'amount' => max(0, (int) round((rand($lootItem['min'], $lootItem['max']) + $cpuBonus) * (100 + $expedition->robot->stats()->lootPercent($expedition->robot)) / 100)),
                 ];
             }
         }
@@ -34,7 +34,7 @@ class ExpeditionLootGenerator
 
             $generatedLoot[] = [
                 'resource' => $guaranteedItem['resource'],
-                'amount' => rand($guaranteedItem['min'], $guaranteedItem['max']) + $cpuBonus,
+                'amount' => max(0, (int) round((rand($guaranteedItem['min'], $guaranteedItem['max']) + $cpuBonus) * (100 + $expedition->robot->stats()->lootPercent($expedition->robot)) / 100)),
             ];
         }
 
@@ -48,9 +48,12 @@ class ExpeditionLootGenerator
                     * $inventoryItem->resource->storage_size;
             });
 
-        $freeStorage = $robot->totalStorage() - $usedStorage;
+        $freeStorage = max(0, $robot->totalStorage() - $usedStorage);
 
         foreach ($generatedLoot as $item) {
+            if ($item['amount'] <= 0) {
+                continue;
+            }
             $resource = Resource::where('name', $item['resource'])->first();
 
             if (! $resource) {
