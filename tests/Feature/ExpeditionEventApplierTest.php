@@ -110,10 +110,13 @@ class ExpeditionEventApplierTest extends TestCase
         $this->assertSame($xp, $expedition->robot->fresh()->xp);
     }
 
-    public function test_critical_event_is_deferred_until_return_to_base_logic(): void
+    public function test_critical_emp_sets_battery_to_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $expedition = $this->expedition();
+        $expedition->robot->update(['battery' => 80]);
 
-        app(ExpeditionEventApplier::class)->apply($this->expedition(), 'critical_emp');
+        app(ExpeditionEventApplier::class)->apply($expedition, 'critical_emp');
+
+        $this->assertSame(0, $expedition->robot->fresh()->battery);
     }
 }
