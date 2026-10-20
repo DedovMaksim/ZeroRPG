@@ -35,13 +35,17 @@ class ExpeditionLogGenerator
             [5, 'finish', 'Экспедиция завершена'],
         ];
 
+        $duration = max(1, (int) $expedition->started_at->diffInSeconds($expedition->finished_at));
+
         foreach ($events as [$minute, $type, $message]) {
+            $offset = $type === 'finish' ? $duration : (int) floor($minute * $duration / 5);
+            $offset = min($duration, $offset);
             ExpeditionLog::create([
                 'expedition_id' => $expedition->id,
-                'minute' => $minute,
+                'minute' => (int) floor($offset / 60),
                 'event_type' => $type,
                 'message' => $message,
-                'event_time' => $expedition->started_at->copy()->addMinutes($minute),
+                'event_time' => $expedition->started_at->copy()->addSeconds($offset),
             ]);
         }
     }
