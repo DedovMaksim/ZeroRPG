@@ -78,8 +78,8 @@ class ExpeditionEquipmentTest extends TestCase
         $normalExpedition = $normal->robot->expeditions()->firstOrFail();
         $upgradedExpedition = $upgraded->robot->expeditions()->firstOrFail();
 
-        $normalDuration = $normalExpedition->finished_at->diffInSeconds($normalExpedition->started_at);
-        $upgradedDuration = $upgradedExpedition->finished_at->diffInSeconds($upgradedExpedition->started_at);
+        $normalDuration = $normalExpedition->started_at->diffInSeconds($normalExpedition->finished_at);
+        $upgradedDuration = $upgradedExpedition->started_at->diffInSeconds($upgradedExpedition->finished_at);
 
         $this->assertLessThan($normalDuration, $upgradedDuration);
     }
