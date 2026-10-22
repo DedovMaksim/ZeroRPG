@@ -110,4 +110,21 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ])->assertExitCode(1);
     }
 
+    public function test_progression_economy_command_runs(): void
+    {
+        $this->artisan('game:progression-economy', [
+            '--location' => 'drone_dump',
+            '--expeditions' => '5',
+            '--runs' => '100',
+            '--seed' => '42',
+        ])->assertExitCode(0);
+    }
+
+    public function test_progression_economy_rejects_invalid_expedition_count(): void
+    {
+        $this->artisan('game:progression-economy', [
+            '--expeditions' => '0',
+        ])->assertExitCode(1);
+    }
+
 }
