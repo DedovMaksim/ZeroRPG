@@ -7,7 +7,7 @@ use Random\Randomizer;
 
 class ExpeditionBalanceSimulator
 {
-    public function simulate(string $slug, int $runs = 10000, int $seed = 42): array
+    public function simulate(string $slug, int $runs = 10000, int $seed = 42, ?array $profile = null): array
     {
         $location = config('locations.'.$slug);
         if (! is_array($location)) {
@@ -17,18 +17,33 @@ class ExpeditionBalanceSimulator
             throw new \InvalidArgumentException('Runs must be positive.');
         }
 
+        $profile ??= ['ssd' => 8, 'cpu' => 1, 'loot_percent' => 0, 'energy_cost_percent' => 0];
+        $capacity = (int) ($profile['ssd'] ?? 8);
+        $cpu = (int) ($profile['cpu'] ?? 1);
+        $lootPercent = (int) ($profile['loot_percent'] ?? 0);
+        $energyCostPercent = (int) ($profile['energy_cost_percent'] ?? 0);
+        if ($capacity < 0 || $cpu < 0 || $lootPercent < -100 || $energyCostPercent < -100) {
+            throw new \InvalidArgumentException('Invalid robot profile.');
+        }
+        $resourceConfig = config('resources', []);
+        $resourceByName = [];
+        foreach ($resourceConfig as $slugKey => $resourceData) {
+            $resourceByName[$resourceData['name']] = $slugKey;
+        }
+
         $rng = new Randomizer(new Mt19937($seed));
         $difficulty = (int) $location['difficulty'];
         $catalog = app(ExpeditionEventCatalog::class);
         $totals = [
             'runs' => $runs, 'aborted' => 0, 'events' => 0,
             'xp' => 0, 'battery_delta' => 0, 'integrity_loss' => 0,
-            'loot' => [], 'event_counts' => [],
+            'loot' => [], 'event_counts' => [], 'carried' => [], 'found_value' => 0, 'carried_value' => 0, 'lost_units' => 0,
         ];
 
         for ($i = 0; $i < $runs; $i++) {
             $pool = $catalog->eligible($slug, $difficulty);
             $aborted = false;
+            $freeStorage = $capacity;
 
             for ($slot = 0; $slot < $catalog->maxEvents($difficulty); $slot++) {
                 if ($rng->getInt(1, 100) > $catalog->triggerChance($difficulty)) {
@@ -66,7 +81,7 @@ class ExpeditionBalanceSimulator
                         $totals['xp'] += $amount;
                     } else {
                         $resource = $effect['resource'];
-                        $totals['loot'][$resource] = ($totals['loot'][$resource] ?? 0) + $amount;
+                        $this->recordLoot($totals, $resource, $amount, $freeStorage, $resourceConfig, $resourceByName);
                     }
                 }
             }
@@ -79,18 +94,20 @@ class ExpeditionBalanceSimulator
             $loot = [];
             foreach ($location['loot'] as $item) {
                 if ($rng->getInt(1, 100) <= (int) $item['chance']) {
-                    $loot[$item['resource']] = ($loot[$item['resource']] ?? 0)
-                        + $rng->getInt((int) $item['min'], (int) $item['max']);
+                    $baseAmount = $rng->getInt((int) $item['min'], (int) $item['max']);
+                    $amount = max(0, (int) round(($baseAmount + min(5, intdiv($cpu, 10))) * (100 + $lootPercent) / 100));
+                    $loot[$item['resource']] = ($loot[$item['resource']] ?? 0) + $amount;
                 }
             }
 
             if ($loot === []) {
                 $item = $location['loot'][$rng->getInt(0, count($location['loot']) - 1)];
-                $loot[$item['resource']] = $rng->getInt((int) $item['min'], (int) $item['max']);
+                $baseAmount = $rng->getInt((int) $item['min'], (int) $item['max']);
+                $loot[$item['resource']] = max(0, (int) round(($baseAmount + min(5, intdiv($cpu, 10))) * (100 + $lootPercent) / 100));
             }
 
             foreach ($loot as $resource => $amount) {
-                $totals['loot'][$resource] = ($totals['loot'][$resource] ?? 0) + $amount;
+                $this->recordLoot($totals, $resource, $amount, $freeStorage, $resourceConfig, $resourceByName);
             }
         }
 
@@ -107,11 +124,17 @@ class ExpeditionBalanceSimulator
         }
         $totals['loot'] = $normalizedLoot;
 
+        ksort($totals['carried']);
         ksort($totals['loot']);
         ksort($totals['event_counts']);
         $averages = [];
         foreach ($totals['loot'] as $resource => $amount) {
             $averages[$resource] = round($amount / $runs, 3);
+        }
+
+        $carriedAverages = [];
+        foreach ($totals['carried'] as $resource => $amount) {
+            $carriedAverages[$resource] = round($amount / $runs, 3);
         }
 
         return [
@@ -123,10 +146,37 @@ class ExpeditionBalanceSimulator
             'xp_per_run' => round($totals['xp'] / $runs, 3),
             'integrity_loss_per_run' => round($totals['integrity_loss'] / $runs, 3),
             'battery_cost' => (int) $location['battery_cost'],
+            'effective_battery_cost' => max(0, (int) ceil($location['battery_cost'] * (100 + $energyCostPercent) / 100)),
+            'profile' => $profile,
+            'found_value_per_run' => round($totals['found_value'] / $runs, 3),
+            'carried_value_per_run' => round($totals['carried_value'] / $runs, 3),
+            'lost_units_per_run' => round($totals['lost_units'] / $runs, 3),
+            'carried_loot_per_run' => $carriedAverages,
             'event_battery_delta_per_run' => round($totals['battery_delta'] / $runs, 3),
             'loot_per_run' => $averages,
             'event_counts' => $totals['event_counts'],
         ];
+    }
+
+    private function recordLoot(array &$totals, string $resource, int $amount, int &$freeStorage, array $resources, array $byName): void
+    {
+        $slug = array_key_exists($resource, $resources) ? $resource : ($byName[$resource] ?? null);
+        if ($slug === null || $amount <= 0) {
+            return;
+        }
+
+        $definition = $resources[$slug];
+        $name = $definition['name'];
+        $size = (int) $definition['storage_size'];
+        $value = (int) $definition['scrap_value'];
+        $carried = $size > 0 ? min($amount, intdiv($freeStorage, $size)) : $amount;
+        $freeStorage -= $carried * $size;
+
+        $totals['loot'][$name] = ($totals['loot'][$name] ?? 0) + $amount;
+        $totals['carried'][$name] = ($totals['carried'][$name] ?? 0) + $carried;
+        $totals['found_value'] += $amount * $value;
+        $totals['carried_value'] += $carried * $value;
+        $totals['lost_units'] += $amount - $carried;
     }
 
     private function pickEvent(array $pool, Randomizer $rng): ?string
