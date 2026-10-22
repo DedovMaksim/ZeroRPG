@@ -191,3 +191,111 @@ Artisan::command('game:module-economy
     $this->line('RAM is excluded: no direct loot-value bonus in the expedition simulator.');
     return 0;
 })->purpose('Estimate payback of actual Mk.1 equipment against starter expedition economy');
+
+
+Artisan::command('game:progression-economy
+    {--location=drone_dump : Expedition location}
+    {--expeditions=50 : Number of consecutive expeditions}
+    {--runs=10000 : Monte Carlo runs per storage profile}
+    {--seed=42 : Random seed}', function (\App\Services\ExpeditionBalanceSimulator $simulator) {
+    $slug = (string) $this->option('location');
+    $count = filter_var($this->option('expeditions'), FILTER_VALIDATE_INT);
+    $runs = filter_var($this->option('runs'), FILTER_VALIDATE_INT);
+    $seed = filter_var($this->option('seed'), FILTER_VALIDATE_INT);
+    if (! config('locations.'.$slug) || $count === false || $count < 1 || $count > 10000
+        || $runs === false || $runs < 1 || $runs > 1000000 || $seed === false) {
+        $this->error('Invalid location or options. Expeditions: 1..10000, runs: 1..1000000, seed: integer.');
+        return 1;
+    }
+
+    $modules = [
+        'No module' => ['ssd' => 0, 'price' => 0],
+        'SSD Mk.1 equipped' => ['ssd' => 8, 'price' => 40],
+    ];
+    $results = [];
+    foreach ($modules as $name => $module) {
+        $scraps = -$module['price'];
+        $gross = 0.0;
+        $logisticsLevel = 1;
+        $logisticsXp = 0.0;
+        $elapsedMinutes = 0.0;
+        $battery = 100.0;
+        $repairScrapUnits = 0.0;
+        $repairCostScraps = 0.0;
+        $milestone = null;
+        $purchaseAffordRun = null;
+        $cache = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $ssd = 8 + ($logisticsLevel - 1) * 2 + $module['ssd'];
+            if (! isset($cache[$ssd])) {
+                $cache[$ssd] = $simulator->simulate($slug, $runs, $seed, [
+                    'ssd' => $ssd, 'cpu' => 1, 'loot_percent' => 0, 'energy_cost_percent' => 0,
+                ]);
+            }
+            $sample = $cache[$ssd];
+            $energy = $sample['effective_battery_cost'];
+            if ($battery < $energy) {
+                $wait = ($energy - $battery) * 0.25;
+                $elapsedMinutes += $wait;
+                $battery = $energy;
+            }
+            $battery -= $energy;
+            $duration = 3 + 2 * (int) config('locations.'.$slug.'.difficulty');
+            $elapsedMinutes += $duration;
+            $battery = min(100, $battery + $duration * 4);
+
+            // Average event energy is reported but excluded from battery accounting:
+            // its signed effects cannot be modeled faithfully from a single mean.
+            $value = $sample['carried_value_per_run'];
+            $gross += $value;
+            $scraps += $value;
+
+            // Reserve the expected metal required to restore integrity.
+            // Repair bay construction, repair timing and inventory are NOT simulated.
+            $repairUnits = $sample['integrity_loss_per_run'] / max(1, (int) config('repair.integrity_per_repair'))
+                * (int) config('repair.cost');
+            $repairScrapUnits += $repairUnits;
+            $repairCostScraps += $repairUnits * (int) config('resources.scrap_metal.scrap_value', 1);
+            $scraps -= $repairUnits * (int) config('resources.scrap_metal.scrap_value', 1);
+
+            // Selling all carried resources grants logistics XP equal to sale value.
+            $logisticsXp += $value;
+            while ($logisticsXp >= 50 + ($logisticsLevel - 1) * 25) {
+                $logisticsXp -= 50 + ($logisticsLevel - 1) * 25;
+                $logisticsLevel++;
+            }
+            if ($name === 'No module' && $purchaseAffordRun === null && $scraps >= 40) {
+                $purchaseAffordRun = $i;
+            }
+            if ($name !== 'No module' && $milestone === null && $scraps >= 0) {
+                $milestone = $i;
+            }
+        }
+        $results[$name] = [
+            'gross' => $gross, 'net' => $scraps, 'minutes' => $elapsedMinutes,
+            'logistics' => $logisticsLevel, 'ssd' => 8 + ($logisticsLevel - 1) * 2 + $module['ssd'],
+            'repair' => $repairCostScraps, 'afford' => $purchaseAffordRun, 'recoup' => $milestone,
+        ];
+    }
+
+    $rows = [];
+    foreach ($results as $name => $r) {
+        $rows[] = [
+            $name, round($r['gross'], 2), round($r['repair'], 2),
+            round($r['net'], 2), round($r['minutes'], 1),
+            $r['logistics'], $r['ssd'],
+            $r['afford'] ?? '-', $r['recoup'] ?? '-',
+        ];
+    }
+    $this->info(config('locations.'.$slug.'.name').' — expected progression ('.$count.' expeditions)');
+    $this->table(
+        ['Scenario', 'Gross', 'Repair reserve', 'Net after module', 'Minutes', 'Logistics', 'Final SSD', 'SSD affordable at', 'Module recouped at'],
+        $rows
+    );
+    $this->line('Expected-value forecast, NOT a discrete playthrough. No randomness across consecutive expeditions.');
+    $this->line('Assumes all loot is sold after each expedition; starts with empty SSD, 100 battery, logistics 1, CPU 1.');
+    $this->line('SSD-equipped scenario pays 40 scraps up front (can temporarily have a negative balance).');
+    $this->line('Repair reserve is an equivalent scrap opportunity cost, not actual repair transactions; repair bay availability is not modeled.');
+    $this->line('Event battery effects, level-ups, expedition abort timing, and real inventory constraints are excluded.');
+    return 0;
+})->purpose('Estimate progression with logistics XP, battery wait and repair reserve');
