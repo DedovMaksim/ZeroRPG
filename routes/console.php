@@ -72,3 +72,61 @@ Artisan::command('game:simulate-expeditions
 
     return 0;
 })->purpose('Simulate expedition balance without modifying game data');
+
+
+Artisan::command('game:compare-upgrades
+    {--runs=10000 : Simulations per configuration}
+    {--seed=42 : Shared random seed}
+    {--location=drone_dump : Location slug}', function (\App\Services\ExpeditionBalanceSimulator $simulator) {
+    $runs = filter_var($this->option('runs'), FILTER_VALIDATE_INT);
+    $seed = filter_var($this->option('seed'), FILTER_VALIDATE_INT);
+    $slug = (string) $this->option('location');
+
+    if ($runs === false || $runs < 1 || $runs > 1000000 || $seed === false) {
+        $this->error('Use --runs between 1 and 1000000 and an integer --seed.');
+        return 1;
+    }
+    if (! config('locations.'.$slug)) {
+        $this->error('Unknown location: '.$slug);
+        return 1;
+    }
+
+    $baseline = ['ssd' => 8, 'cpu' => 1, 'loot_percent' => 0, 'energy_cost_percent' => 0];
+    $scenarios = [
+        'Baseline' => $baseline,
+        'SSD 16 MB' => array_replace($baseline, ['ssd' => 16]),
+        'SSD 32 MB' => array_replace($baseline, ['ssd' => 32]),
+        'CPU 10' => array_replace($baseline, ['cpu' => 10]),
+        'CPU 20' => array_replace($baseline, ['cpu' => 20]),
+        'Energy -10%' => array_replace($baseline, ['energy_cost_percent' => -10]),
+        'Energy -20%' => array_replace($baseline, ['energy_cost_percent' => -20]),
+    ];
+
+    $rows = [];
+    $baselineValue = null;
+    foreach ($scenarios as $name => $profile) {
+        $result = $simulator->simulate($slug, $runs, $seed, $profile);
+        $value = $result['carried_value_per_run'];
+        $baselineValue ??= $value;
+        $energy = $result['effective_battery_cost'];
+        $rows[] = [
+            $name,
+            $profile['ssd'],
+            $profile['cpu'],
+            $energy,
+            $value,
+            $baselineValue > 0 ? round(100 * ($value / $baselineValue - 1), 1).'%' : 'n/a',
+            $energy > 0 ? round(100 * $value / $energy, 3) : 'n/a',
+            $result['lost_units_per_run'],
+        ];
+    }
+
+    $this->info(config('locations.'.$slug.'.name').' — isolated upgrade comparison ('.$runs.' runs)');
+    $this->table(
+        ['Scenario', 'SSD MB', 'CPU', 'Energy %', 'Scraps/run', 'vs baseline', 'Scraps/100 energy', 'Lost units/run'],
+        $rows
+    );
+    $this->line('Each scenario starts with an empty SSD; only one stat changes from baseline.');
+    $this->line('Scrap values are potential sale values, not confirmed market proceeds.');
+    return 0;
+})->purpose('Compare isolated SSD, CPU and energy upgrades without changing game data');
