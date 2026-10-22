@@ -127,4 +127,14 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ])->assertExitCode(1);
     }
 
+    public function test_progression_does_not_require_upfront_money_for_ssd(): void
+    {
+        $this->artisan('game:progression-economy', [
+            '--location' => 'drone_dump',
+            '--expeditions' => '1',
+            '--runs' => '100',
+            '--seed' => '42',
+        ])->expectsOutputToContain('not affordable')->assertExitCode(0);
+    }
+
 }
