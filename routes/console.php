@@ -208,31 +208,33 @@ Artisan::command('game:progression-economy
         return 1;
     }
 
-    $modules = [
-        'No module' => ['ssd' => 0, 'price' => 0],
-        'SSD Mk.1 equipped' => ['ssd' => 8, 'price' => 40],
-    ];
-    $results = [];
-    foreach ($modules as $name => $module) {
-        $scraps = -$module['price'];
+    $price = 40;
+    $ssdBonus = 8;
+    $cache = [];
+    $forecast = function (bool $buy) use ($slug, $count, $runs, $seed, $simulator, $price, $ssdBonus, &$cache): array {
+        $balance = 0.0;
         $gross = 0.0;
+        $repairReserve = 0.0;
         $logisticsLevel = 1;
         $logisticsXp = 0.0;
-        $elapsedMinutes = 0.0;
+        $robotLevel = 1;
+        $robotXp = 0.0;
         $battery = 100.0;
-        $repairScrapUnits = 0.0;
-        $repairCostScraps = 0.0;
-        $milestone = null;
-        $purchaseAffordRun = null;
-        $cache = [];
+        $elapsedMinutes = 0.0;
+        $purchaseAt = null;
+        $purchaseMinutes = null;
+        $history = [];
+
         for ($i = 1; $i <= $count; $i++) {
-            $ssd = 8 + ($logisticsLevel - 1) * 2 + $module['ssd'];
-            if (! isset($cache[$ssd])) {
-                $cache[$ssd] = $simulator->simulate($slug, $runs, $seed, [
-                    'ssd' => $ssd, 'cpu' => 1, 'loot_percent' => 0, 'energy_cost_percent' => 0,
+            $ssd = 8 + ($robotLevel - 1) + ($logisticsLevel - 1) * 2 + ($purchaseAt === null ? 0 : $ssdBonus);
+            $cpu = $robotLevel;
+            $key = $ssd.':'.$cpu;
+            if (! isset($cache[$key])) {
+                $cache[$key] = $simulator->simulate($slug, $runs, $seed, [
+                    'ssd' => $ssd, 'cpu' => $cpu, 'loot_percent' => 0, 'energy_cost_percent' => 0,
                 ]);
             }
-            $sample = $cache[$ssd];
+            $sample = $cache[$key];
             $energy = $sample['effective_battery_cost'];
             if ($battery < $energy) {
                 $wait = ($energy - $battery) * 0.25;
@@ -240,62 +242,87 @@ Artisan::command('game:progression-economy
                 $battery = $energy;
             }
             $battery -= $energy;
-            $duration = 3 + 2 * (int) config('locations.'.$slug.'.difficulty');
+            $ram = 4 * (2 ** ($robotLevel - 1));
+            $baseDuration = 3 + 2 * (int) config('locations.'.$slug.'.difficulty');
+            $ramReduction = min(50, log(max(1, $ram) / 4, 2) * 1.1);
+            $duration = max(60, (int) round($baseDuration * 60 * (1 - $ramReduction / 100))) / 60;
             $elapsedMinutes += $duration;
-            $battery = min(100, $battery + $duration * 4);
+            $battery = min(100 + ($robotLevel - 1) * 5, $battery + $duration * 4);
 
-            // Average event energy is reported but excluded from battery accounting:
-            // its signed effects cannot be modeled faithfully from a single mean.
             $value = $sample['carried_value_per_run'];
             $gross += $value;
-            $scraps += $value;
+            $balance += $value;
 
-            // Reserve the expected metal required to restore integrity.
-            // Repair bay construction, repair timing and inventory are NOT simulated.
-            $repairUnits = $sample['integrity_loss_per_run'] / max(1, (int) config('repair.integrity_per_repair'))
-                * (int) config('repair.cost');
-            $repairScrapUnits += $repairUnits;
-            $repairCostScraps += $repairUnits * (int) config('resources.scrap_metal.scrap_value', 1);
-            $scraps -= $repairUnits * (int) config('resources.scrap_metal.scrap_value', 1);
+            // Expected repair opportunity cost; not a real repair or an inventory transaction.
+            $reserve = $sample['integrity_loss_per_run']
+                / max(1, (int) config('repair.integrity_per_repair'))
+                * (int) config('repair.cost')
+                * (int) config('resources.scrap_metal.scrap_value', 1);
+            $repairReserve += $reserve;
+            $balance -= $reserve;
 
-            // Selling all carried resources grants logistics XP equal to sale value.
             $logisticsXp += $value;
             while ($logisticsXp >= 50 + ($logisticsLevel - 1) * 25) {
                 $logisticsXp -= 50 + ($logisticsLevel - 1) * 25;
                 $logisticsLevel++;
             }
-            if ($name === 'No module' && $purchaseAffordRun === null && $scraps >= 40) {
-                $purchaseAffordRun = $i;
+            $robotXp += $sample['xp_per_run'];
+            while ($robotXp >= 100 + ($robotLevel - 1) * 50 + (($robotLevel - 1) ** 2) * 25) {
+                $robotXp -= 100 + ($robotLevel - 1) * 50 + (($robotLevel - 1) ** 2) * 25;
+                $robotLevel++;
+                $battery = min(100 + ($robotLevel - 1) * 5, $battery + 5);
             }
-            if ($name !== 'No module' && $milestone === null && $scraps >= 0) {
-                $milestone = $i;
+
+            // Purchase is made after selling the loot, so the new SSD starts working next expedition.
+            if ($buy && $purchaseAt === null && $balance >= $price) {
+                $balance -= $price;
+                $purchaseAt = $i;
+                $purchaseMinutes = $elapsedMinutes;
+            }
+            $history[$i] = $balance;
+        }
+
+        return compact('balance', 'gross', 'repairReserve', 'logisticsLevel', 'robotLevel',
+            'elapsedMinutes', 'purchaseAt', 'purchaseMinutes', 'history', 'ssd');
+    };
+
+    $base = $forecast(false);
+    $buyer = $forecast(true);
+    $breakEven = null;
+    if ($buyer['purchaseAt'] !== null) {
+        foreach ($buyer['history'] as $run => $balance) {
+            if ($run > $buyer['purchaseAt'] && $balance >= $base['history'][$run]) {
+                $breakEven = $run;
+                break;
             }
         }
-        $results[$name] = [
-            'gross' => $gross, 'net' => $scraps, 'minutes' => $elapsedMinutes,
-            'logistics' => $logisticsLevel, 'ssd' => 8 + ($logisticsLevel - 1) * 2 + $module['ssd'],
-            'repair' => $repairCostScraps, 'afford' => $purchaseAffordRun, 'recoup' => $milestone,
-        ];
     }
 
-    $rows = [];
-    foreach ($results as $name => $r) {
-        $rows[] = [
-            $name, round($r['gross'], 2), round($r['repair'], 2),
-            round($r['net'], 2), round($r['minutes'], 1),
-            $r['logistics'], $r['ssd'],
-            $r['afford'] ?? '-', $r['recoup'] ?? '-',
-        ];
-    }
     $this->info(config('locations.'.$slug.'.name').' — expected progression ('.$count.' expeditions)');
     $this->table(
-        ['Scenario', 'Gross', 'Repair reserve', 'Net after module', 'Minutes', 'Logistics', 'Final SSD', 'SSD affordable at', 'Module recouped at'],
-        $rows
+        ['Scenario', 'Gross', 'Repair reserve', 'Final balance', 'Minutes', 'Logistics', 'Robot level', 'Final SSD'],
+        [
+            ['No module', round($base['gross'], 2), round($base['repairReserve'], 2),
+                round($base['balance'], 2), round($base['elapsedMinutes'], 1),
+                $base['logisticsLevel'], $base['robotLevel'],
+                8 + ($base['robotLevel'] - 1) + ($base['logisticsLevel'] - 1) * 2],
+            ['Buy SSD Mk.1 when affordable', round($buyer['gross'], 2), round($buyer['repairReserve'], 2),
+                round($buyer['balance'], 2), round($buyer['elapsedMinutes'], 1),
+                $buyer['logisticsLevel'], $buyer['robotLevel'],
+                8 + ($buyer['robotLevel'] - 1) + ($buyer['logisticsLevel'] - 1) * 2 + ($buyer['purchaseAt'] === null ? 0 : $ssdBonus)],
+        ]
     );
-    $this->line('Expected-value forecast, NOT a discrete playthrough. No randomness across consecutive expeditions.');
-    $this->line('Assumes all loot is sold after each expedition; starts with empty SSD, 100 battery, logistics 1, CPU 1.');
-    $this->line('SSD-equipped scenario pays 40 scraps up front (can temporarily have a negative balance).');
-    $this->line('Repair reserve is an equivalent scrap opportunity cost, not actual repair transactions; repair bay availability is not modeled.');
-    $this->line('Event battery effects, level-ups, expedition abort timing, and real inventory constraints are excluded.');
+    $this->table(['Metric', 'Value'], [
+        ['Purchase after expedition', $buyer['purchaseAt'] ?? 'not affordable'],
+        ['Purchase at elapsed minutes', $buyer['purchaseMinutes'] === null ? '-' : round($buyer['purchaseMinutes'], 1)],
+        ['True comparative break-even at expedition', $breakEven ?? 'not reached'],
+        ['Break-even expeditions after purchase', $breakEven === null ? '-' : $breakEven - $buyer['purchaseAt']],
+        ['Buyer balance minus no-purchase balance', round($buyer['balance'] - $base['balance'], 2)],
+    ]);
+    $this->line('Expected-value forecast, not a discrete playthrough. Both scenarios start with zero scraps and identical progression rules.');
+    $this->line('Purchase occurs only when balance >= 40, after selling loot; only one equipped SSD module contributes.');
+    $this->line('Break-even compares cumulative balances at the same expedition, including purchase cost.');
+    $this->line('Assumes empty SSD and sale after every expedition. Repair is a reserve, not an actual resource transaction.');
+    $this->line('Battery event effects, repair bay availability, inventory constraints and event level-up timing are approximated or excluded.');
     return 0;
-})->purpose('Estimate progression with logistics XP, battery wait and repair reserve');
+})->purpose('Compare real purchase timing against no-purchase progression');
