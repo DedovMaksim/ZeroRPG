@@ -130,3 +130,64 @@ Artisan::command('game:compare-upgrades
     $this->line('Scrap values are potential sale values, not confirmed market proceeds.');
     return 0;
 })->purpose('Compare isolated SSD, CPU and energy upgrades without changing game data');
+
+
+Artisan::command('game:module-economy
+    {--runs=10000 : Simulations per scenario}
+    {--seed=42 : Shared random seed}
+    {--location= : Optional location slug}', function (\App\Services\ExpeditionBalanceSimulator $simulator) {
+    $runs = filter_var($this->option('runs'), FILTER_VALIDATE_INT);
+    $seed = filter_var($this->option('seed'), FILTER_VALIDATE_INT);
+    if ($runs === false || $runs < 1 || $runs > 1000000 || $seed === false) {
+        $this->error('Use --runs between 1 and 1000000 and an integer --seed.');
+        return 1;
+    }
+
+    $slugs = $this->option('location') ? [(string) $this->option('location')] : array_keys(config('locations', []));
+    foreach ($slugs as $slug) {
+        if (! config('locations.'.$slug)) {
+            $this->error('Unknown location: '.$slug);
+            return 1;
+        }
+    }
+
+    // The baseline is deliberately fixed: empty SSD, CPU 1, logistics level 1.
+    // An equipped module replaces the module of the same type; bonuses never stack.
+    $baseline = ['ssd' => 8, 'cpu' => 1, 'loot_percent' => 0, 'energy_cost_percent' => 0];
+    $modules = [
+        ['slug' => 'ssd-module-mk1', 'name' => 'SSD Module Mk.1', 'price' => 40, 'ssd_bonus' => 8, 'cpu_bonus' => 0],
+        ['slug' => 'cpu-module-mk1', 'name' => 'CPU Module Mk.1', 'price' => 25, 'ssd_bonus' => 0, 'cpu_bonus' => 1],
+    ];
+
+    foreach ($slugs as $slug) {
+        $base = $simulator->simulate($slug, $runs, $seed, $baseline);
+        $baseValue = $base['carried_value_per_run'];
+        $rows = [];
+        foreach ($modules as $module) {
+            $profile = $baseline;
+            $profile['ssd'] += $module['ssd_bonus'];
+            $profile['cpu'] += $module['cpu_bonus'];
+            $upgraded = $simulator->simulate($slug, $runs, $seed, $profile);
+            $gain = $upgraded['carried_value_per_run'] - $baseValue;
+            $rows[] = [
+                $module['name'],
+                $module['price'],
+                $baseValue,
+                $upgraded['carried_value_per_run'],
+                round($gain, 3),
+                $gain > 0 ? (string) (int) ceil($module['price'] / $gain) : 'no payback',
+                $baseValue > 0 ? (string) (int) ceil($module['price'] / $baseValue) : 'n/a',
+            ];
+        }
+        $this->info(config('locations.'.$slug.'.name').' ('.$slug.')');
+        $this->table(
+            ['Module', 'Price', 'Base scraps/run', 'With module', 'Gain/run', 'Payback runs', 'Runs to afford'],
+            $rows
+        );
+    }
+    $this->line('Static estimate only: empty SSD before each run, no logistics leveling, repairs, existing inventory or battery waiting.');
+    $this->line('Prices and module bonuses reflect ItemSeeder defaults; database rows may differ.');
+    $this->line('Only the equipped module of each type contributes; duplicate purchases do not stack.');
+    $this->line('RAM is excluded: no direct loot-value bonus in the expedition simulator.');
+    return 0;
+})->purpose('Estimate payback of actual Mk.1 equipment against starter expedition economy');
