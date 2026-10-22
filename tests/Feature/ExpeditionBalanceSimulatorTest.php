@@ -53,7 +53,7 @@ class ExpeditionBalanceSimulatorTest extends TestCase
 
     public function test_simulator_rejects_negative_storage(): void
     {
-        $this->expectException(\\InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         app(ExpeditionBalanceSimulator::class)->simulate('drone_dump', 10, 42, ['ssd' => -1]);
     }
 
