@@ -64,4 +64,33 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ])->assertExitCode(0);
     }
 
+    public function test_isolated_upgrade_comparison_command_runs(): void
+    {
+        $this->artisan('game:compare-upgrades', [
+            '--runs' => '30',
+            '--seed' => '42',
+            '--location' => 'drone_dump',
+        ])->assertExitCode(0);
+    }
+
+    public function test_isolated_upgrade_comparison_rejects_unknown_location(): void
+    {
+        $this->artisan('game:compare-upgrades', [
+            '--runs' => '10',
+            '--location' => 'nonexistent',
+        ])->assertExitCode(1);
+    }
+
+    public function test_energy_discount_does_not_change_loot(): void
+    {
+        $simulator = app(ExpeditionBalanceSimulator::class);
+        $base = $simulator->simulate('drone_dump', 200, 42, ['ssd' => 8, 'cpu' => 1]);
+        $discount = $simulator->simulate('drone_dump', 200, 42, [
+            'ssd' => 8, 'cpu' => 1, 'energy_cost_percent' => -20,
+        ]);
+
+        $this->assertSame($base['carried_loot_per_run'], $discount['carried_loot_per_run']);
+        $this->assertSame(64, $discount['effective_battery_cost']);
+    }
+
 }
