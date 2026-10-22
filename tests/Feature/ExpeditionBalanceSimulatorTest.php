@@ -40,4 +40,28 @@ class ExpeditionBalanceSimulatorTest extends TestCase
             '--location' => 'drone_dump',
         ])->assertExitCode(0);
     }
+    public function test_larger_ssd_never_reduces_carried_value_for_same_seed(): void
+    {
+        $simulator = app(ExpeditionBalanceSimulator::class);
+        $small = $simulator->simulate('drone_dump', 500, 42, ['ssd' => 8, 'cpu' => 1]);
+        $large = $simulator->simulate('drone_dump', 500, 42, ['ssd' => 32, 'cpu' => 1]);
+
+        $this->assertGreaterThanOrEqual($small['carried_value_per_run'], $large['carried_value_per_run']);
+        $this->assertEquals($small['found_value_per_run'], $large['found_value_per_run']);
+        $this->assertLessThanOrEqual($large['found_value_per_run'], $large['carried_value_per_run']);
+    }
+
+    public function test_simulator_rejects_negative_storage(): void
+    {
+        $this->expectException(\\InvalidArgumentException::class);
+        app(ExpeditionBalanceSimulator::class)->simulate('drone_dump', 10, 42, ['ssd' => -1]);
+    }
+
+    public function test_command_accepts_developed_profile(): void
+    {
+        $this->artisan('game:simulate-expeditions', [
+            '--runs' => '10', '--location' => 'drone_dump', '--profile' => 'developed',
+        ])->assertExitCode(0);
+    }
+
 }
