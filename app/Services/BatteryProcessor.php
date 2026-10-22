@@ -18,19 +18,25 @@ class BatteryProcessor
             return;
         }
 
-        $minutesPassed = $robot->battery_updated_at
-            ->diffInMinutes(now());
+        $now = now();
+        $secondsPassed = max(0, $robot->battery_updated_at->diffInSeconds($now, false));
 
-        if ($minutesPassed <= 0) {
+        if ($secondsPassed <= 0) {
             return;
         }
 
         // 100% за 25 минут
-        $chargePerMinute = (100 / 25) * max(0, 100 + $robot->stats()->chargeRatePercent($robot)) / 100;
+        $chargePerSecond = (100 / (25 * 60)) * max(0, 100 + $robot->stats()->chargeRatePercent($robot)) / 100;
 
-        $restoredBattery = floor(
-            $minutesPassed * $chargePerMinute
-        );
+        if ($chargePerSecond <= 0) {
+            return;
+        }
+
+        $restoredBattery = (int) floor($secondsPassed * $chargePerSecond);
+
+        if ($restoredBattery < 1) {
+            return;
+        }
 
         $newBattery = min(
             $maxBattery,
@@ -39,7 +45,10 @@ class BatteryProcessor
 
         $robot->update([
             'battery' => $newBattery,
-            'battery_updated_at' => now(),
+            // Retain unused elapsed time between page visits.
+            'battery_updated_at' => $newBattery >= $maxBattery
+                ? $now
+                : $robot->battery_updated_at->copy()->addSeconds((int) ceil($restoredBattery / $chargePerSecond)),
         ]);
     }
 }
