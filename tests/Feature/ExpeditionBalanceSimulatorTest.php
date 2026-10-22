@@ -93,4 +93,21 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         $this->assertSame(64, $discount['effective_battery_cost']);
     }
 
+    public function test_module_economy_command_runs_for_selected_location(): void
+    {
+        $this->artisan('game:module-economy', [
+            '--runs' => '30',
+            '--seed' => '42',
+            '--location' => 'drone_dump',
+        ])->assertExitCode(0);
+    }
+
+    public function test_module_economy_rejects_unknown_location(): void
+    {
+        $this->artisan('game:module-economy', [
+            '--runs' => '10',
+            '--location' => 'missing',
+        ])->assertExitCode(1);
+    }
+
 }
