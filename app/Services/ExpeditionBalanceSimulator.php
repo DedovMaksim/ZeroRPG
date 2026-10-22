@@ -94,6 +94,19 @@ class ExpeditionBalanceSimulator
             }
         }
 
+        // Route loot uses display names, while event loot uses resource slugs.
+        // Merge both under the canonical resource name for the report.
+        $resourceNames = [];
+        foreach (config('resources', []) as $slug => $resource) {
+            $resourceNames[$slug] = $resource['name'];
+        }
+        $normalizedLoot = [];
+        foreach ($totals['loot'] as $resource => $amount) {
+            $name = $resourceNames[$resource] ?? $resource;
+            $normalizedLoot[$name] = ($normalizedLoot[$name] ?? 0) + $amount;
+        }
+        $totals['loot'] = $normalizedLoot;
+
         ksort($totals['loot']);
         ksort($totals['event_counts']);
         $averages = [];
