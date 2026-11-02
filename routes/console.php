@@ -326,3 +326,43 @@ Artisan::command('game:progression-economy
     $this->line('Battery event effects, repair bay availability, inventory constraints and event level-up timing are approximated or excluded.');
     return 0;
 })->purpose('Compare real purchase timing against no-purchase progression');
+
+
+Artisan::command('game:cpu-experiment
+    {--location= : Optional location slug}
+    {--runs=10000 : Simulated route loot rolls}
+    {--seed=42 : Shared random seed}', function (\App\Services\CpuLootExperiment $experiment) {
+    $runs = filter_var($this->option('runs'), FILTER_VALIDATE_INT);
+    $seed = filter_var($this->option('seed'), FILTER_VALIDATE_INT);
+    if ($runs === false || $runs < 1 || $runs > 100000 || $seed === false) {
+        $this->error('Use --runs between 1 and 100000 and an integer --seed.');
+        return 1;
+    }
+
+    $slugs = $this->option('location') ? [(string) $this->option('location')] : array_keys(config('locations', []));
+    foreach ($slugs as $slug) {
+        if (! config('locations.'.$slug)) {
+            $this->error('Unknown location: '.$slug);
+            return 1;
+        }
+        $this->info(config('locations.'.$slug.'.name').' — CPU selection experiment ('.$runs.' rolls)');
+        $rows = [];
+        foreach ($experiment->compare($slug, $runs, $seed) as $result) {
+            $rows[] = [
+                $result['level'], $result['cpu'], $result['ssd'],
+                $result['base'], $result['cpu_module'], $result['cpu_gain'],
+                $result['ssd_module'], $result['ssd_gain'],
+                $result['cpu_opportunities'], $result['cpu_optimized'],
+                $result['cpu_payback'] ?? 'no payback',
+            ];
+        }
+        $this->table(
+            ['Level', 'CPU', 'SSD', 'Base/run', '+CPU/run', 'CPU gain', '+SSD/run', 'SSD gain', 'Opportunities', 'Extra CPU successes', 'CPU payback'],
+            $rows
+        );
+    }
+    $this->line('Experimental only: no live game changes. Route loot only; events, existing inventory, CPU quantity bonus and progression are excluded.');
+    $this->line('Selection chance = min(95%, 10% + 4% per CPU above 1); shared seeded rolls; optimal load maximizes scrap sale value.');
+    $this->line('CPU payback = ceil(25 / incremental scraps per expedition); static estimate, not a purchase timeline.');
+    return 0;
+})->purpose('Compare experimental CPU loot selection against SSD at levels 1, 5, 10, 15 and 20');
