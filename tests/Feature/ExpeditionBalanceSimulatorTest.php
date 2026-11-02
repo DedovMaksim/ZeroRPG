@@ -178,7 +178,7 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ]);
 
         $this->assertSame(1.0, $result['carried_loot_per_run']['Электроника']);
-        $this->assertArrayNotHasKey('Металлолом', $result['carried_loot_per_run']);
+        $this->assertSame(0.0, $result['carried_loot_per_run']['Металлолом']);
         $this->assertSame(12.0, $result['carried_value_per_run']);
         $this->assertSame(5.0, $result['lost_units_per_run']);
     }
