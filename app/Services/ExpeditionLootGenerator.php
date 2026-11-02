@@ -9,6 +9,8 @@ use App\Models\Resource;
 
 class ExpeditionLootGenerator
 {
+    public function __construct(private LootPrioritySorter $sorter) {}
+
     public function generate(Expedition $expedition): array
     {
         $lootTable = $this->getLootTable($expedition->location->slug);
@@ -50,7 +52,7 @@ class ExpeditionLootGenerator
 
         $freeStorage = max(0, $robot->totalStorage() - $usedStorage);
 
-        foreach ($generatedLoot as $item) {
+        foreach ($this->sorter->sort($generatedLoot) as $item) {
             if ($item['amount'] <= 0) {
                 continue;
             }

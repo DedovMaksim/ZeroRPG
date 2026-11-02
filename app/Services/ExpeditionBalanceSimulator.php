@@ -7,6 +7,8 @@ use Random\Randomizer;
 
 class ExpeditionBalanceSimulator
 {
+    public function __construct(private LootPrioritySorter $sorter) {}
+
     public function simulate(string $slug, int $runs = 10000, int $seed = 42, ?array $profile = null): array
     {
         $location = config('locations.'.$slug);
@@ -106,7 +108,9 @@ class ExpeditionBalanceSimulator
                 $loot[$item['resource']] = max(0, (int) round(($baseAmount + min(5, intdiv($cpu, 10))) * (100 + $lootPercent) / 100));
             }
 
-            foreach ($loot as $resource => $amount) {
+            foreach ($this->sorter->sort(array_map(static fn ($resource, $amount) => ['resource' => $resource, 'amount' => $amount], array_keys($loot), array_values($loot))) as $item) {
+                $resource = $item['resource'];
+                $amount = $item['amount'];
                 $this->recordLoot($totals, $resource, $amount, $freeStorage, $resourceConfig, $resourceByName);
             }
         }

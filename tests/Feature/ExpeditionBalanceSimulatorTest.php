@@ -165,4 +165,39 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ])->assertExitCode(0);
     }
 
+    public function test_priority_loading_keeps_electronics_when_ssd_is_limited(): void
+    {
+        config()->set('expedition_event_rules.trigger_chance_by_difficulty.1', 0);
+        config()->set('locations.drone_dump.loot', [
+            ['resource' => 'Металлолом', 'chance' => 100, 'min' => 5, 'max' => 5],
+            ['resource' => 'Электроника', 'chance' => 100, 'min' => 1, 'max' => 1],
+        ]);
+
+        $result = app(ExpeditionBalanceSimulator::class)->simulate('drone_dump', 1, 42, [
+            'ssd' => 8, 'cpu' => 1,
+        ]);
+
+        $this->assertSame(1.0, $result['carried_loot_per_run']['Электроника']);
+        $this->assertSame(0.0, $result['carried_loot_per_run']['Металлолом']);
+        $this->assertSame(12.0, $result['carried_value_per_run']);
+        $this->assertSame(5.0, $result['lost_units_per_run']);
+    }
+
+    public function test_priority_loading_allows_partial_lower_priority_loot(): void
+    {
+        config()->set('expedition_event_rules.trigger_chance_by_difficulty.1', 0);
+        config()->set('locations.drone_dump.loot', [
+            ['resource' => 'Металлолом', 'chance' => 100, 'min' => 5, 'max' => 5],
+            ['resource' => 'Медь', 'chance' => 100, 'min' => 1, 'max' => 1],
+        ]);
+
+        $result = app(ExpeditionBalanceSimulator::class)->simulate('drone_dump', 1, 42, [
+            'ssd' => 5, 'cpu' => 1,
+        ]);
+
+        $this->assertSame(1.0, $result['carried_loot_per_run']['Медь']);
+        $this->assertSame(2.0, $result['carried_loot_per_run']['Металлолом']);
+        $this->assertSame(3.0, $result['lost_units_per_run']);
+    }
+
 }
