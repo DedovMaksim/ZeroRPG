@@ -137,4 +137,32 @@ class ExpeditionBalanceSimulatorTest extends TestCase
         ])->expectsOutputToContain('not affordable')->assertExitCode(0);
     }
 
+    public function test_cpu_experiment_is_deterministic_and_compares_five_levels(): void
+    {
+        $experiment = app(\App\Services\CpuLootExperiment::class);
+        $first = $experiment->compare('drone_dump', 100, 42);
+        $this->assertSame($first, $experiment->compare('drone_dump', 100, 42));
+        $this->assertSame([1, 5, 10, 15, 20], array_column($first, 'level'));
+        foreach ($first as $row) {
+            $this->assertGreaterThanOrEqual(0, $row['cpu_gain']);
+            $this->assertGreaterThanOrEqual(0, $row['ssd_gain']);
+        }
+    }
+
+    public function test_cpu_experiment_command_validates_location(): void
+    {
+        $this->artisan('game:cpu-experiment', [
+            '--location' => 'missing',
+            '--runs' => '10',
+        ])->assertExitCode(1);
+    }
+
+    public function test_cpu_experiment_command_runs(): void
+    {
+        $this->artisan('game:cpu-experiment', [
+            '--location' => 'drone_dump',
+            '--runs' => '30',
+        ])->assertExitCode(0);
+    }
+
 }
