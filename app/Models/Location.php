@@ -12,9 +12,15 @@ class Location extends Model
         'slug',
         'description',
         'difficulty',
+        'required_level',
         'base_duration_minutes',
         'battery_cost',
     ];
+
+    public function isUnlockedFor(int $level): bool
+    {
+        return $level >= $this->required_level;
+    }
 
     public function expeditions(): HasMany
     {
