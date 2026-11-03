@@ -1,0 +1,88 @@
+name: Expedition Progression Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_level:
+        description: 'Target robot level'
+        required: true
+        default: '20'
+        type: choice
+        options:
+          - '10'
+          - '15'
+          - '20'
+          - '25'
+      runs:
+        description: 'Simulations per route'
+        required: true
+        default: '10000'
+        type: choice
+        options:
+          - '1000'
+          - '10000'
+  pull_request:
+    paths:
+      - '.github/workflows/expedition-progression-report.yml'
+      - 'app/Console/Commands/ExpeditionProgressionReport.php'
+      - 'app/Services/ExpeditionProgressionProjector.php'
+      - 'app/Services/ExpeditionBalanceSimulator.php'
+      - 'config/locations.php'
+      - 'config/expedition_events.php'
+      - 'config/expedition_event_rules.php'
+      - 'config/resources.php'
+
+permissions:
+  contents: read
+
+jobs:
+  progression-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Generate both progression strategies
+        env:
+          REPORT_TARGET_LEVEL: ${{ inputs.target_level || '20' }}
+          REPORT_RUNS: ${{ inputs.runs || '1000' }}
+        run: |
+          mkdir -p storage/app/progression-reports
+          php artisan expeditions:progression-report \
+            --target-level="$REPORT_TARGET_LEVEL" --runs="$REPORT_RUNS" --seed=42 \
+            --strategy=xp_per_minute \
+            --output=storage/app/progression-reports/progression-fast.json
+          php artisan expeditions:progression-report \
+            --target-level="$REPORT_TARGET_LEVEL" --runs="$REPORT_RUNS" --seed=42 \
+            --strategy=highest_unlocked \
+            --output=storage/app/progression-reports/progression-unlocked.json
+
+      - name: Upload progression reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: expedition-progression-reports
+          path: storage/app/progression-reports/*.json
+          if-no-files-found: error
+          retention-days: 30
