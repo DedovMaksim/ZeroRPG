@@ -38,4 +38,14 @@ return [
         'storage_size' => 6,
         'scrap_value' => 15,
     ],
+    'ai_core_fragments' => [
+        'name' => 'Фрагменты ядра ИИ',
+        'storage_size' => 10,
+        'scrap_value' => 25,
+    ],
+    'archive_modules' => [
+        'name' => 'Архивные модули',
+        'storage_size' => 8,
+        'scrap_value' => 20,
+    ],
 ];
