@@ -12,6 +12,7 @@ class Location extends Model
         'slug',
         'description',
         'difficulty',
+        'base_duration_minutes',
         'battery_cost',
     ];
 
