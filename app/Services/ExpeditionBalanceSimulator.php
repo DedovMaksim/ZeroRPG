@@ -118,8 +118,8 @@ class ExpeditionBalanceSimulator
         // Route loot uses display names, while event loot uses resource slugs.
         // Merge both under the canonical resource name for the report.
         $resourceNames = [];
-        foreach (config('resources', []) as $slug => $resource) {
-            $resourceNames[$slug] = $resource['name'];
+        foreach (config('resources', []) as $resourceSlug => $resource) {
+            $resourceNames[$resourceSlug] = $resource['name'];
         }
         $normalizedLoot = [];
         foreach ($totals['loot'] as $resource => $amount) {
