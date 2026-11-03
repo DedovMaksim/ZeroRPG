@@ -155,4 +155,32 @@ return [
             ['resource' => 'Накопители данных', 'chance' => 60, 'min' => 1, 'max' => 2],
         ],
     ],
+    'security_perimeter' => [
+        'name' => 'Периметр безопасности',
+        'description' => 'Охраняемая промышленная зона с уцелевшими защитными конструкциями и механизмами.',
+        'difficulty' => 4,
+        'required_level' => 13,
+        'base_duration_minutes' => 38,
+        'battery_cost' => 135,
+        'xp' => ['min' => 11, 'max' => 16],
+        'loot' => [
+            ['resource' => 'Электроника', 'chance' => 45, 'min' => 1, 'max' => 2],
+            ['resource' => 'Композитные пластины', 'chance' => 65, 'min' => 1, 'max' => 2],
+            ['resource' => 'Сервоприводы', 'chance' => 30, 'min' => 1, 'max' => 1],
+        ],
+    ],
+    'assembly_plant' => [
+        'name' => 'Автоматизированный сборочный цех',
+        'description' => 'Роботизированное производство с редкими приводами и вычислительными компонентами.',
+        'difficulty' => 4,
+        'required_level' => 15,
+        'base_duration_minutes' => 48,
+        'battery_cost' => 145,
+        'xp' => ['min' => 13, 'max' => 19],
+        'loot' => [
+            ['resource' => 'Микрочипы', 'chance' => 55, 'min' => 1, 'max' => 2],
+            ['resource' => 'Композитные пластины', 'chance' => 45, 'min' => 1, 'max' => 2],
+            ['resource' => 'Сервоприводы', 'chance' => 70, 'min' => 1, 'max' => 2],
+        ],
+    ],
 ];
