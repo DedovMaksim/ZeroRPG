@@ -319,9 +319,14 @@
 
                                     <div class="text-sm text-gray-500 mb-4 mt-auto">
                                         <div>Сложность: {{ $location->difficulty }}</div>
+                                        <div>Длительность: {{ $location->base_duration_minutes }} мин.</div>
+                                        <div>Доступен с уровня: {{ $location->required_level }}</div>
                                         <div>Расход батареи: {{ max(0, (int) ceil($location->battery_cost * (100 + $robot->stats()->energyCostPercent($robot)) / 100)) }}%</div>
                                     </div>
 
+                                    @if (! $location->isUnlockedFor($robot->level))
+                                        <div class="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-center">Заблокировано до уровня {{ $location->required_level }}</div>
+                                    @else
                                     <form method="POST" action="{{ route('expeditions.start', $location) }}">
                                         @csrf
 
@@ -332,6 +337,7 @@
                                             Отправить в экспедицию
                                         </button>
                                     </form>
+                                    @endif
 
                                 </div>
                             @endforeach
