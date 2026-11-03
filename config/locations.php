@@ -106,7 +106,7 @@ return [
         'required_level' => 5,
         'base_duration_minutes' => 12,
         'battery_cost' => 95,
-        'xp' => ['min' => 4, 'max' => 7],
+        'xp' => ['min' => 6, 'max' => 9],
         'loot' => [
             ['resource' => 'Металлолом', 'chance' => 80, 'min' => 3, 'max' => 6],
             ['resource' => 'Медь', 'chance' => 70, 'min' => 2, 'max' => 4],
@@ -120,7 +120,7 @@ return [
         'required_level' => 7,
         'base_duration_minutes' => 16,
         'battery_cost' => 105,
-        'xp' => ['min' => 5, 'max' => 8],
+        'xp' => ['min' => 8, 'max' => 12],
         'loot' => [
             ['resource' => 'Металлолом', 'chance' => 95, 'min' => 6, 'max' => 12],
             ['resource' => 'Медь', 'chance' => 85, 'min' => 3, 'max' => 6],
@@ -134,7 +134,7 @@ return [
         'required_level' => 9,
         'base_duration_minutes' => 22,
         'battery_cost' => 115,
-        'xp' => ['min' => 7, 'max' => 11],
+        'xp' => ['min' => 12, 'max' => 17],
         'loot' => [
             ['resource' => 'Электроника', 'chance' => 65, 'min' => 1, 'max' => 2],
             ['resource' => 'Микрочипы', 'chance' => 65, 'min' => 1, 'max' => 2],
@@ -148,7 +148,7 @@ return [
         'required_level' => 11,
         'base_duration_minutes' => 28,
         'battery_cost' => 125,
-        'xp' => ['min' => 9, 'max' => 13],
+        'xp' => ['min' => 15, 'max' => 21],
         'loot' => [
             ['resource' => 'Электроника', 'chance' => 40, 'min' => 1, 'max' => 2],
             ['resource' => 'Микрочипы', 'chance' => 60, 'min' => 1, 'max' => 2],
@@ -162,7 +162,7 @@ return [
         'required_level' => 13,
         'base_duration_minutes' => 38,
         'battery_cost' => 135,
-        'xp' => ['min' => 11, 'max' => 16],
+        'xp' => ['min' => 20, 'max' => 28],
         'loot' => [
             ['resource' => 'Электроника', 'chance' => 45, 'min' => 1, 'max' => 2],
             ['resource' => 'Композитные пластины', 'chance' => 65, 'min' => 1, 'max' => 2],
@@ -176,7 +176,7 @@ return [
         'required_level' => 15,
         'base_duration_minutes' => 48,
         'battery_cost' => 145,
-        'xp' => ['min' => 13, 'max' => 19],
+        'xp' => ['min' => 25, 'max' => 35],
         'loot' => [
             ['resource' => 'Микрочипы', 'chance' => 55, 'min' => 1, 'max' => 2],
             ['resource' => 'Композитные пластины', 'chance' => 45, 'min' => 1, 'max' => 2],
@@ -190,7 +190,7 @@ return [
         'required_level' => 17,
         'base_duration_minutes' => 65,
         'battery_cost' => 155,
-        'xp' => ['min' => 16, 'max' => 23],
+        'xp' => ['min' => 35, 'max' => 47],
         'loot' => [
             ['resource' => 'Накопители данных', 'chance' => 45, 'min' => 1, 'max' => 2],
             ['resource' => 'Архивные модули', 'chance' => 65, 'min' => 1, 'max' => 2],
@@ -204,7 +204,7 @@ return [
         'required_level' => 19,
         'base_duration_minutes' => 85,
         'battery_cost' => 165,
-        'xp' => ['min' => 19, 'max' => 27],
+        'xp' => ['min' => 48, 'max' => 64],
         'loot' => [
             ['resource' => 'Архивные модули', 'chance' => 70, 'min' => 1, 'max' => 2],
             ['resource' => 'Фрагменты ядра ИИ', 'chance' => 55, 'min' => 1, 'max' => 2],
