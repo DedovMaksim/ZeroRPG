@@ -1,0 +1,93 @@
+name: Expedition Balance Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Simulations per route'
+        required: true
+        default: '10000'
+        type: choice
+        options:
+          - '1000'
+          - '10000'
+      ssd:
+        description: 'Robot SSD capacity'
+        required: true
+        default: '32'
+        type: choice
+        options:
+          - '8'
+          - '16'
+          - '32'
+      cpu:
+        description: 'Robot CPU level'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '9'
+          - '17'
+  pull_request:
+    paths:
+      - '.github/workflows/expedition-balance-report.yml'
+      - 'app/Console/Commands/ExpeditionBalanceReport.php'
+      - 'app/Services/ExpeditionBalanceSimulator.php'
+      - 'config/locations.php'
+      - 'config/resources.php'
+      - 'config/expedition_events.php'
+      - 'config/expedition_event_rules.php'
+      - 'config/loot_priorities.php'
+
+permissions:
+  contents: read
+
+jobs:
+  balance-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Simulate all locations
+        env:
+          REPORT_RUNS: ${{ inputs.runs || '1000' }}
+          REPORT_SSD: ${{ inputs.ssd || '32' }}
+          REPORT_CPU: ${{ inputs.cpu || '1' }}
+        run: |
+          mkdir -p storage/app/balance-reports
+          php artisan expeditions:balance-report \
+            --runs="$REPORT_RUNS" --seed=42 \
+            --ssd="$REPORT_SSD" --cpu="$REPORT_CPU" \
+            --output=storage/app/balance-reports/expedition-balance.json
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: expedition-balance-report
+          path: storage/app/balance-reports/expedition-balance.json
+          if-no-files-found: error
+          retention-days: 30
