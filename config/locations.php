@@ -127,4 +127,32 @@ return [
             ['resource' => 'Электроника', 'chance' => 20, 'min' => 1, 'max' => 1],
         ],
     ],
+    'research_sector' => [
+        'name' => 'Исследовательский сектор',
+        'description' => 'Лаборатории старой сети. В уцелевших терминалах встречаются микрочипы и носители данных.',
+        'difficulty' => 3,
+        'required_level' => 9,
+        'base_duration_minutes' => 22,
+        'battery_cost' => 115,
+        'xp' => ['min' => 7, 'max' => 11],
+        'loot' => [
+            ['resource' => 'Электроника', 'chance' => 65, 'min' => 1, 'max' => 2],
+            ['resource' => 'Микрочипы', 'chance' => 65, 'min' => 1, 'max' => 2],
+            ['resource' => 'Накопители данных', 'chance' => 25, 'min' => 1, 'max' => 1],
+        ],
+    ],
+    'data_archive' => [
+        'name' => 'Архив данных',
+        'description' => 'Законсервированный серверный архив с редкими накопителями и вычислительными компонентами.',
+        'difficulty' => 3,
+        'required_level' => 11,
+        'base_duration_minutes' => 28,
+        'battery_cost' => 125,
+        'xp' => ['min' => 9, 'max' => 13],
+        'loot' => [
+            ['resource' => 'Электроника', 'chance' => 40, 'min' => 1, 'max' => 2],
+            ['resource' => 'Микрочипы', 'chance' => 60, 'min' => 1, 'max' => 2],
+            ['resource' => 'Накопители данных', 'chance' => 60, 'min' => 1, 'max' => 2],
+        ],
+    ],
 ];
