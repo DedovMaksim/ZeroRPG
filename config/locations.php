@@ -5,6 +5,7 @@ return [
         'name' => 'Свалка дронов',
         'description' => 'Старая зона утилизации сервисных машин. Здесь много металлолома и иногда встречается электроника.',
         'difficulty' => 1,
+        'required_level' => 1,
         'base_duration_minutes' => 5,
         'battery_cost' => 80,
         'xp' => [
@@ -37,6 +38,7 @@ return [
         'name' => 'Заброшенный завод',
         'description' => 'Полуразрушенный промышленный комплекс. Здесь чаще встречаются медные кабели и старые электронные блоки.',
         'difficulty' => 2,
+        'required_level' => 1,
         'base_duration_minutes' => 7,
         'battery_cost' => 90,
         'xp' => [
@@ -69,6 +71,7 @@ return [
         'name' => 'Старая подстанция',
         'description' => 'Опасная энергетическая зона. Здесь много меди и выше шанс найти рабочую электронику.',
         'difficulty' => 3,
+        'required_level' => 1,
         'base_duration_minutes' => 9,
         'battery_cost' => 100,
         'xp' => [
@@ -94,6 +97,34 @@ return [
                 'min' => 1,
                 'max' => 2,
             ],
+        ],
+    ],
+    'repair_terminal' => [
+        'name' => 'Ремонтный терминал',
+        'description' => 'Уцелевший ремонтный комплекс. Среди обломков можно найти медь и электронные блоки.',
+        'difficulty' => 2,
+        'required_level' => 5,
+        'base_duration_minutes' => 12,
+        'battery_cost' => 95,
+        'xp' => ['min' => 4, 'max' => 7],
+        'loot' => [
+            ['resource' => 'Металлолом', 'chance' => 80, 'min' => 3, 'max' => 6],
+            ['resource' => 'Медь', 'chance' => 70, 'min' => 2, 'max' => 4],
+            ['resource' => 'Электроника', 'chance' => 35, 'min' => 1, 'max' => 2],
+        ],
+    ],
+    'cargo_hub' => [
+        'name' => 'Грузовой узел',
+        'description' => 'Заброшенный распределительный центр с запасами промышленного сырья.',
+        'difficulty' => 2,
+        'required_level' => 7,
+        'base_duration_minutes' => 16,
+        'battery_cost' => 105,
+        'xp' => ['min' => 5, 'max' => 8],
+        'loot' => [
+            ['resource' => 'Металлолом', 'chance' => 95, 'min' => 6, 'max' => 12],
+            ['resource' => 'Медь', 'chance' => 85, 'min' => 3, 'max' => 6],
+            ['resource' => 'Электроника', 'chance' => 20, 'min' => 1, 'max' => 1],
         ],
     ],
 ];

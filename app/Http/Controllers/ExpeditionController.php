@@ -15,6 +15,11 @@ class ExpeditionController extends Controller
     ): RedirectResponse {
         $robot = auth()->user()->robot;
 
+        if (! $location->isUnlockedFor($robot->level)) {
+            return redirect()->route('dashboard')->with('error',
+                'Маршрут откроется на уровне '.$location->required_level.'.');
+        }
+
         $activeExpedition = $robot->expeditions()
             ->where('status', 'in_progress')
             ->first();
