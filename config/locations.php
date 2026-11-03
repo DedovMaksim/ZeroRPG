@@ -183,4 +183,32 @@ return [
             ['resource' => 'Сервоприводы', 'chance' => 70, 'min' => 1, 'max' => 2],
         ],
     ],
+    'dead_comms_zone' => [
+        'name' => 'Мёртвая зона связи',
+        'description' => 'Зона радиомолчания с повреждёнными узлами старого ИИ и изолированными архивами.',
+        'difficulty' => 5,
+        'required_level' => 17,
+        'base_duration_minutes' => 65,
+        'battery_cost' => 155,
+        'xp' => ['min' => 16, 'max' => 23],
+        'loot' => [
+            ['resource' => 'Накопители данных', 'chance' => 45, 'min' => 1, 'max' => 2],
+            ['resource' => 'Архивные модули', 'chance' => 65, 'min' => 1, 'max' => 2],
+            ['resource' => 'Фрагменты ядра ИИ', 'chance' => 25, 'min' => 1, 'max' => 1],
+        ],
+    ],
+    'old_network_node' => [
+        'name' => 'Узел старой сети',
+        'description' => 'Последний действующий узел древней сети, скрывающий фрагменты управляющего интеллекта.',
+        'difficulty' => 5,
+        'required_level' => 19,
+        'base_duration_minutes' => 85,
+        'battery_cost' => 165,
+        'xp' => ['min' => 19, 'max' => 27],
+        'loot' => [
+            ['resource' => 'Архивные модули', 'chance' => 70, 'min' => 1, 'max' => 2],
+            ['resource' => 'Фрагменты ядра ИИ', 'chance' => 55, 'min' => 1, 'max' => 2],
+            ['resource' => 'Микрочипы', 'chance' => 40, 'min' => 1, 'max' => 2],
+        ],
+    ],
 ];
