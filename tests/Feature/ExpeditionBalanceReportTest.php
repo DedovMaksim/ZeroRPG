@@ -51,6 +51,36 @@ class ExpeditionBalanceReportTest extends TestCase
         }
     }
 
+    public function test_xp_progression_keeps_starter_routes_and_scales_later_routes(): void
+    {
+        $expected = [
+            'drone_dump' => [1, 3],
+            'abandoned_factory' => [2, 4],
+            'old_substation' => [3, 5],
+            'repair_terminal' => [6, 9],
+            'cargo_hub' => [8, 12],
+            'research_sector' => [12, 17],
+            'data_archive' => [15, 21],
+            'security_perimeter' => [20, 28],
+            'assembly_plant' => [25, 35],
+            'dead_comms_zone' => [35, 47],
+            'old_network_node' => [48, 64],
+        ];
+
+        foreach ($expected as $slug => [$min, $max]) {
+            $this->assertSame($min, config('locations.'.$slug.'.xp.min'));
+            $this->assertSame($max, config('locations.'.$slug.'.xp.max'));
+        }
+
+        // Longer, higher-level routes must offer more base XP per completed run.
+        $previous = 0;
+        foreach (array_keys($expected) as $slug) {
+            $average = (config('locations.'.$slug.'.xp.min') + config('locations.'.$slug.'.xp.max')) / 2;
+            $this->assertGreaterThan($previous, $average);
+            $previous = $average;
+        }
+    }
+
     public function test_report_rejects_invalid_runs(): void
     {
         $this->artisan('expeditions:balance-report', ['--runs' => 0])->assertFailed();
