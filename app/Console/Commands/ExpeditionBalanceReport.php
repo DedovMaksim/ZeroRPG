@@ -44,18 +44,30 @@ class ExpeditionBalanceReport extends Command
             $row['xp_per_minute'] = round($row['xp_per_run'] / $row['duration_minutes'], 3);
             $row['carried_value_per_minute'] = round($row['carried_value_per_run'] / $row['duration_minutes'], 3);
             $row['lost_value_per_run'] = round($row['found_value_per_run'] - $row['carried_value_per_run'], 3);
+            // Gross energy cost excludes battery effects: these are reported separately.
+            $energy = $row['effective_battery_cost'];
+            $row['xp_per_energy'] = $energy > 0 ? round($row['xp_per_run'] / $energy, 4) : null;
+            $row['carried_value_per_energy'] = $energy > 0 ? round($row['carried_value_per_run'] / $energy, 4) : null;
+            $row['lost_value_per_minute'] = round($row['lost_value_per_run'] / $row['duration_minutes'], 3);
+            $row['success_percent'] = round(100 - $row['abort_percent'], 3);
+            $row['xp_per_successful_run'] = $row['successful_runs'] > 0
+                ? round($row['xp_per_run'] * $runs / $row['successful_runs'], 3)
+                : null;
+            $row['carried_value_per_successful_run'] = $row['successful_runs'] > 0
+                ? round($row['carried_value_per_run'] * $runs / $row['successful_runs'], 3)
+                : null;
             $results[] = $row;
         }
 
         usort($results, static fn (array $a, array $b) => $a['required_level'] <=> $b['required_level'] ?: $a['duration_minutes'] <=> $b['duration_minutes']);
 
         $this->table(
-            ['Route', 'Level', 'Min', 'Battery', 'XP/run', 'XP/min', 'Value/run', 'Value/min', 'Lost/run', 'Abort %', 'Integrity/run'],
+            ['Route', 'Lv', 'Min', 'Battery', 'XP/min', 'XP/energy', 'Value/min', 'Value/energy', 'Lost/min', 'Success %', 'Damage/success'],
             array_map(static fn (array $r) => [
                 $r['location'], $r['required_level'], $r['duration_minutes'], $r['effective_battery_cost'],
-                $r['xp_per_run'], $r['xp_per_minute'], $r['carried_value_per_run'],
-                $r['carried_value_per_minute'], $r['lost_value_per_run'],
-                $r['abort_percent'], $r['integrity_loss_per_run'],
+                $r['xp_per_minute'], $r['xp_per_energy'], $r['carried_value_per_minute'],
+                $r['carried_value_per_energy'], $r['lost_value_per_minute'],
+                $r['success_percent'], $r['integrity_loss_per_successful_run'],
             ], $results)
         );
 

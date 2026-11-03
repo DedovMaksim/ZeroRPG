@@ -29,6 +29,22 @@ class ExpeditionBalanceReportTest extends TestCase
                 $this->assertArrayHasKey('xp_per_minute', $route);
                 $this->assertArrayHasKey('carried_value_per_minute', $route);
                 $this->assertArrayHasKey('lost_value_per_run', $route);
+                $this->assertArrayHasKey('xp_per_energy', $route);
+                $this->assertArrayHasKey('carried_value_per_energy', $route);
+                $this->assertArrayHasKey('lost_value_per_minute', $route);
+                $this->assertArrayHasKey('success_percent', $route);
+                $this->assertArrayHasKey('integrity_loss_per_successful_run', $route);
+                $this->assertArrayHasKey('xp_per_successful_run', $route);
+                $this->assertArrayHasKey('carried_value_per_successful_run', $route);
+                $this->assertSame(20, $route['successful_runs'] + (int) round($route['abort_percent'] * 20 / 100));
+                $this->assertEqualsWithDelta(100 - $route['abort_percent'], $route['success_percent'], 0.001);
+                if ($route['effective_battery_cost'] > 0) {
+                    $this->assertEqualsWithDelta(
+                        $route['xp_per_run'] / $route['effective_battery_cost'],
+                        $route['xp_per_energy'],
+                        0.0001
+                    );
+                }
             }
         } finally {
             @unlink($path);

@@ -38,6 +38,7 @@ class ExpeditionBalanceSimulator
         $catalog = app(ExpeditionEventCatalog::class);
         $totals = [
             'runs' => $runs, 'aborted' => 0, 'events' => 0,
+            'successful_integrity_loss' => 0,
             'xp' => 0, 'battery_delta' => 0, 'integrity_loss' => 0,
             'loot' => [], 'event_counts' => [], 'carried' => [], 'found_value' => 0, 'carried_value' => 0, 'lost_units' => 0,
         ];
@@ -46,6 +47,7 @@ class ExpeditionBalanceSimulator
             $pool = $catalog->eligible($slug, $difficulty);
             $aborted = false;
             $freeStorage = $capacity;
+            $integrityBefore = $totals['integrity_loss'];
 
             for ($slot = 0; $slot < $catalog->maxEvents($difficulty); $slot++) {
                 if ($rng->getInt(1, 100) > $catalog->triggerChance($difficulty)) {
@@ -92,6 +94,7 @@ class ExpeditionBalanceSimulator
                 continue;
             }
 
+            $totals['successful_integrity_loss'] += $totals['integrity_loss'] - $integrityBefore;
             $totals['xp'] += $rng->getInt((int) $location['xp']['min'], (int) $location['xp']['max']);
             $loot = [];
             foreach ($location['loot'] as $item) {
@@ -147,6 +150,8 @@ class ExpeditionBalanceSimulator
             'seed' => $seed,
             'abort_percent' => round(100 * $totals['aborted'] / $runs, 3),
             'events_per_run' => round($totals['events'] / $runs, 3),
+            'successful_runs' => $runs - $totals['aborted'],
+            'integrity_loss_per_successful_run' => $runs > $totals['aborted'] ? round($totals['successful_integrity_loss'] / ($runs - $totals['aborted']), 3) : null,
             'xp_per_run' => round($totals['xp'] / $runs, 3),
             'integrity_loss_per_run' => round($totals['integrity_loss'] / $runs, 3),
             'battery_cost' => (int) $location['battery_cost'],
