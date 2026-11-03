@@ -1,0 +1,68 @@
+name: Stateful Expedition Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_level:
+        description: 'Target level'
+        required: true
+        default: '20'
+        type: choice
+        options: ['10', '15', '20']
+      runs:
+        description: 'Route Monte Carlo samples'
+        required: true
+        default: '10000'
+        type: choice
+        options: ['1000', '10000']
+  pull_request:
+    paths:
+      - '.github/workflows/stateful-expedition-report.yml'
+      - 'app/Services/StatefulExpeditionCycleSimulator.php'
+      - 'app/Console/Commands/StatefulExpeditionReport.php'
+      - 'app/Services/ExpeditionBalanceSimulator.php'
+      - 'config/locations.php'
+      - 'config/repair.php'
+      - 'config/resources.php'
+
+permissions:
+  contents: read
+
+jobs:
+  stateful-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
+      - run: |
+          cp .env.example .env
+          php artisan key:generate --force
+      - name: Generate three strategies
+        env:
+          TARGET_LEVEL: ${{ inputs.target_level || '20' }}
+          ROUTE_RUNS: ${{ inputs.runs || '1000' }}
+        run: |
+          mkdir -p storage/app/stateful-reports
+          for strategy in xp_per_minute highest_unlocked xp_per_cycle_minute; do
+            php artisan expeditions:stateful-report \
+              --target-level="$TARGET_LEVEL" --runs="$ROUTE_RUNS" --seed=42 \
+              --strategy="$strategy" --max-expeditions=100000 \
+              --output="storage/app/stateful-reports/${strategy}.json"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stateful-expedition-reports
+          path: storage/app/stateful-reports/*.json
+          if-no-files-found: error
+          retention-days: 30
