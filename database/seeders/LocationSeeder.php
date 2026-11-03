@@ -18,6 +18,7 @@ class LocationSeeder extends Seeder
                     'name' => $location['name'],
                     'description' => $location['description'],
                     'difficulty' => $location['difficulty'],
+                    'required_level' => $location['required_level'] ?? 1,
                     'base_duration_minutes' => $location['base_duration_minutes'],
                     'battery_cost' => $location['battery_cost'],
                 ]
