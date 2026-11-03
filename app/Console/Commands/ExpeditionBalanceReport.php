@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\ExpeditionBalanceSimulator;
+use App\Services\ExpeditionEventCatalog;
 use Illuminate\Console\Command;
 
 class ExpeditionBalanceReport extends Command
@@ -16,7 +17,7 @@ class ExpeditionBalanceReport extends Command
 
     protected $description = 'Compare expedition balance for every configured location';
 
-    public function handle(ExpeditionBalanceSimulator $simulator): int
+    public function handle(ExpeditionBalanceSimulator $simulator, ExpeditionEventCatalog $catalog): int
     {
         $runs = filter_var($this->option('runs'), FILTER_VALIDATE_INT);
         $seed = filter_var($this->option('seed'), FILTER_VALIDATE_INT);
@@ -31,7 +32,13 @@ class ExpeditionBalanceReport extends Command
         $profile = ['ssd' => $ssd, 'cpu' => $cpu];
         $results = [];
         foreach (config('locations', []) as $slug => $location) {
+            $eligibleEvents = $catalog->eligible($slug, (int) $location['difficulty']);
+            if ($eligibleEvents === []) {
+                $this->error('No eligible expedition events for location: '.$slug);
+                return self::FAILURE;
+            }
             $row = $simulator->simulate($slug, $runs, $seed, $profile);
+            $row['eligible_event_count'] = count($eligibleEvents);
             $row['required_level'] = (int) ($location['required_level'] ?? 1);
             $row['duration_minutes'] = (int) $location['base_duration_minutes'];
             $row['xp_per_minute'] = round($row['xp_per_run'] / $row['duration_minutes'], 3);
