@@ -28,4 +28,14 @@ return [
         'storage_size' => 7,
         'scrap_value' => 14,
     ],
+    'servos' => [
+        'name' => 'Сервоприводы',
+        'storage_size' => 8,
+        'scrap_value' => 18,
+    ],
+    'composite_plates' => [
+        'name' => 'Композитные пластины',
+        'storage_size' => 6,
+        'scrap_value' => 15,
+    ],
 ];
