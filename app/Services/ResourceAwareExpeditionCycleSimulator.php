@@ -67,6 +67,7 @@ class ResourceAwareExpeditionCycleSimulator
         $unloads = 0;
         $lostLoot = 0;
         $history = [];
+        $routeUsage = [];
         $stopped = null;
         $repairCost = (int) config('repair.cost', 5);
         $repairRecovery = (int) config('repair.integrity_per_repair', 10);
@@ -152,6 +153,10 @@ class ResourceAwareExpeditionCycleSimulator
             }
             $xp += $route['xp'];
             $expeditions++;
+            $purpose = $farming ? 'farming' : 'progression';
+            $routeUsage[$chosen] ??= ['total' => 0, 'progression' => 0, 'farming' => 0];
+            $routeUsage[$chosen]['total']++;
+            $routeUsage[$chosen][$purpose]++;
             if ($farming) {
                 $farmingExpeditions++;
             }
@@ -183,7 +188,10 @@ class ResourceAwareExpeditionCycleSimulator
             $stopped = 'expedition_limit';
         }
 
+        ksort($routeUsage);
+
         return [
+            'route_usage' => $routeUsage,
             'parameters' => compact('targetLevel', 'runs', 'seed', 'strategy', 'maxExpeditions'),
             'result' => [
                 'reached_level' => $level,
