@@ -169,6 +169,8 @@ class ResourceAwareExpeditionCycleSimulator
                     'level' => $level,
                     'route' => $chosen,
                     'expeditions' => $expeditions,
+                    'repairs' => $repairs,
+                    'farming_expeditions' => $farmingExpeditions,
                     'elapsed_minutes' => round($elapsed, 2),
                     'waiting_minutes' => round($waiting, 2),
                     'integrity' => round($integrity, 2),
